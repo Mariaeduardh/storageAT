@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Controle de Estoque - Eletrônicos</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Estoque de Eletrônicos</h1>
+
+    <form id="formProduto">
+        <input type="text" id="nome" placeholder="Nome do Produto" required>
+        <input type="number" id="quantidade" placeholder="Quantidade" required>
+        <input type="number" id="precoCompra" placeholder="Preço de Compra" required>
+        <input type="number" id="precoVenda" placeholder="Preço de Venda" required>
+        <button type="submit">Adicionar Produto</button>
+    </form>
+
+    <h2>Produtos Cadastrados</h2>
+    <table id="tabelaProdutos">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Quantidade</th>
+                <th>Valor</th>
+                <th>Lucro</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <h2>Relatório</h2>
+    <div id="relatorio">
+        <p>Total de Produtos em Estoque: <span id="totalProdutos">0</span></p>
+        <p>Total de Itens Vendidos: <span id="totalVendidos">0</span></p>
+        <p>Lucro Acumulado das Vendas: R$ <span id="lucroVendas">0.00</span></p>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

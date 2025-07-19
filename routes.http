@@ -1,0 +1,26 @@
+### Criar
+POST http://localhost:3333/storage
+Content-Type: application/json
+
+{
+  "title": "Notebook Dell",
+  "description": "i7, 16GB RAM",
+  "value": "3500"
+}
+
+### Listar
+GET http://localhost:3333/storage?search
+
+
+### Atualizar (troque pelo ID que você quer testar)
+PUT http://localhost:3333/storage/ID_AQUI
+Content-Type: application/json
+
+{
+  "title": "Notebook Dell Atualizado",
+  "description": "i9, 32GB RAM",
+  "value": "4500"
+}
+
+### Deletar (troque pelo ID que você quer excluir)
+DELETE http://localhost:3333/storage/ID_AQUI
