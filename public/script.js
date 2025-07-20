@@ -5,6 +5,7 @@ const tabela = document.querySelector('#tabelaProdutos tbody');
 const totalProdutosSpan = document.getElementById('totalProdutos');
 const totalVendidosSpan = document.getElementById('totalVendidos');
 const lucroVendasSpan = document.getElementById('lucroVendas');
+const btnLimpar = document.getElementById('btnLimpar');
 
 let produtos = [];
 let vendas = [];
@@ -41,8 +42,10 @@ async function registrarSaida(id) {
 
     if (!response.ok) throw new Error('Erro ao registrar saída');
 
+    // Atualiza a quantidade local do produto
     produto.quantidade = novaQuantidade;
 
+    // Registra a venda localmente (para relatório)
     vendas.push({
       nome: produto.title,
       precoCompra: parseFloat(extrairPrecoCompra(produto.description)),
@@ -141,6 +144,15 @@ async function adicionarProduto(evento) {
   }
 }
 
+async function limparTabela() {
+  produtos = [];
+  vendas = [];
+  atualizarTabela();
+  atualizarRelatorio();
+  await carregarProdutos();
+}
+
 form.addEventListener('submit', adicionarProduto);
+btnLimpar.addEventListener('click', limparTabela);
 
 carregarProdutos();
