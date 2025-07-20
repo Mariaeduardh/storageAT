@@ -47,4 +47,8 @@ export class DatabasePostgres {
       WHERE id = ${id}
     `;
   }
+
+  async test() {
+    await sql`SELECT 1`;
+  }
 }

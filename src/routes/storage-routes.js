@@ -95,4 +95,14 @@ export async function storageRoutes(server) {
       return reply.status(500).send({ error: 'Erro ao deletar produto' });
     }
   });
+
+  // 🔁 Nova rota de teste
+  server.get('/ping', async (request, reply) => {
+    try {
+      await database.test(); // nova função no banco
+      return reply.send({ message: 'Conexão com o banco funcionando!' });
+    } catch (error) {
+      return reply.status(500).send({ error: 'Falha ao conectar com o banco' });
+    }
+  });
 }
