@@ -1,5 +1,5 @@
-// src/server.js
-import { fastify } from 'fastify';
+// server.js (na raiz)
+import fastify from 'fastify';
 import { storageRoutes } from './src/routes/storage-routes.js';
 
 const server = fastify();
@@ -7,7 +7,10 @@ const server = fastify();
 // registra as rotas
 server.register(storageRoutes);
 
-server.listen({ port: process.env.PORT ?? 3333 }, (err, address) => {
+const PORT = process.env.PORT ?? 3333;
+const HOST = '0.0.0.0';
+
+server.listen({ port: PORT, host: HOST }, (err, address) => {
   if (err) {
     console.error(err);
     process.exit(1);
