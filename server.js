@@ -16,15 +16,13 @@ const sql = postgres(process.env.DATABASE_URL, {
   }
 });
 
-// Aqui você pode passar o sql para as rotas, se quiser
-// Exemplo: server.decorate('sql', sql);
-
 server.decorate('sql', sql); // disponibiliza o sql dentro das rotas
 
 // registra as rotas
 server.register(storageRoutes);
 
-const PORT = Number(process.env.PORT) || 3333;
+// Usa porta do Render (process.env.PORT) ou LOCAL_PORT para dev, ou 3333 padrão
+const PORT = Number(process.env.PORT) || Number(process.env.LOCAL_PORT) || 3333;
 const HOST = '0.0.0.0';
 
 server.listen({ port: PORT, host: HOST }, (err, address) => {
