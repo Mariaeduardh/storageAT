@@ -1,6 +1,6 @@
 // src/server.js
 import { fastify } from 'fastify';
-import { storageRoutes } from './routes/storage-routes.js';
+import { storageRoutes } from './src/routes/storage-routes.js';
 
 const server = fastify();
 
