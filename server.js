@@ -1,27 +1,27 @@
-// server.js (na raiz)
 import fastify from 'fastify';
 import { storageRoutes } from './src/routes/storage-routes.js';
 import postgres from 'postgres';
 import dotenv from 'dotenv';
+import cors from '@fastify/cors';
 
-// Carrega variáveis do .env (em dev local)
 dotenv.config();
 
 const server = fastify();
 
-// Configura conexão com o banco usando DATABASE_URL
+await server.register(cors, {
+  origin: ['https://storageat.netlify.app', 'http://localhost:3333'],
+});
+
 const sql = postgres(process.env.DATABASE_URL, {
   ssl: {
-    rejectUnauthorized: false, // importante para Neon e outros servidores gerenciados
+    rejectUnauthorized: false,
   }
 });
 
-server.decorate('sql', sql); // disponibiliza o sql dentro das rotas
+server.decorate('sql', sql);
 
-// registra as rotas
 server.register(storageRoutes);
 
-// Usa porta do Render (process.env.PORT) ou LOCAL_PORT para dev, ou 3333 padrão
 const PORT = Number(process.env.PORT) || Number(process.env.LOCAL_PORT) || 3333;
 const HOST = '0.0.0.0';
 
