@@ -1,4 +1,4 @@
-const API_URL = 'https://storageat.onrender.com'; 
+const API_URL = 'https://storageat.onrender.com';
 
 const form = document.getElementById('formProduto');
 const tabela = document.querySelector('#tabelaProdutos tbody');
@@ -35,7 +35,7 @@ async function registrarSaida(id) {
         title: produto.title,
         description: produto.description,
         value: produto.value,
-        quantidade: novaQuantidade 
+        quantidade: novaQuantidade
       }),
     });
 
@@ -45,7 +45,7 @@ async function registrarSaida(id) {
 
     vendas.push({
       nome: produto.title,
-      precoCompra: parseFloat(extrairPrecoCompra(produto.description)), 
+      precoCompra: parseFloat(extrairPrecoCompra(produto.description)),
       precoVenda: produto.value,
       quantidade: 1
     });
@@ -65,23 +65,30 @@ function extrairPrecoCompra(desc) {
 
 function atualizarTabela() {
   tabela.innerHTML = '';
+
   produtos.forEach((produto) => {
     const lucroUnitario = produto.value - extrairPrecoCompra(produto.description);
     const quantidade = produto.quantidade ?? 0;
     const lucroTotal = lucroUnitario * quantidade;
 
-    const linha = `
-      <tr class="${quantidade === 0 ? 'fora-estoque' : ''}">
-        <td>${produto.title}</td>
-        <td>${quantidade}</td>
-        <td>R$ ${lucroUnitario.toFixed(2)}</td>
-        <td>R$ ${lucroTotal.toFixed(2)}</td>
-        <td>
-          <button onclick="registrarSaida('${produto.id}')" ${quantidade === 0 ? 'disabled' : ''}>Vender</button>
-        </td>
-      </tr>
+    const linha = document.createElement('tr');
+    if (quantidade === 0) {
+      linha.classList.add('fora-estoque');
+    }
+
+    linha.innerHTML = `
+      <td>${produto.title}</td>
+      <td>${quantidade}</td>
+      <td>R$ ${lucroUnitario.toFixed(2)}</td>
+      <td>R$ ${lucroTotal.toFixed(2)}</td>
+      <td><button ${quantidade === 0 ? 'disabled' : ''}>Vender</button></td>
     `;
-    tabela.innerHTML += linha;
+
+    // Adiciona evento ao botão para registrar a venda
+    const btnVender = linha.querySelector('button');
+    btnVender.addEventListener('click', () => registrarSaida(produto.id));
+
+    tabela.appendChild(linha);
   });
 
   atualizarRelatorio();
@@ -121,7 +128,7 @@ async function adicionarProduto(evento) {
         title: nome,
         description: descricao,
         value: precoVenda,
-        quantidade 
+        quantidade
       }),
     });
 
