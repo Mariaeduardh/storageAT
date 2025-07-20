@@ -9,47 +9,56 @@ const lucroVendasSpan = document.getElementById('lucroVendas');
 let produtos = [];
 let vendas = [];
 
-
 async function carregarProdutos() {
-  const response = await fetch(`${API_URL}/storage`);
-  produtos = await response.json();
-  atualizarTabela();
+  try {
+    const response = await fetch(`${API_URL}/storage`);
+    if (!response.ok) throw new Error('Erro ao carregar produtos');
+    produtos = await response.json();
+    atualizarTabela();
+  } catch (error) {
+    console.error(error);
+    alert('Não foi possível carregar os produtos. Tente novamente.');
+  }
 }
 
-
 async function registrarSaida(id) {
-  const produto = produtos.find(p => p.id === id);
-  if (!produto || produto.value === 0) return;
+  try {
+    const produto = produtos.find(p => p.id === id);
+    if (!produto || (produto.quantidade ?? 0) === 0) return;
 
-  const novaQuantidade = produto.quantidade ? produto.quantidade - 1 : 0;
+    const novaQuantidade = (produto.quantidade ?? 0) - 1;
 
-  await fetch(`${API_URL}/storage/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      title: produto.title,
-      description: produto.description,
-      value: produto.value,
-      quantidade: novaQuantidade 
-    }),
-  });
+    const response = await fetch(`${API_URL}/storage/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: produto.title,
+        description: produto.description,
+        value: produto.value,
+        quantidade: novaQuantidade 
+      }),
+    });
 
+    if (!response.ok) throw new Error('Erro ao registrar saída');
 
-  produto.quantidade = novaQuantidade;
+    produto.quantidade = novaQuantidade;
 
-  vendas.push({
-    nome: produto.title,
-    precoCompra: parseFloat(extrairPrecoCompra(produto.description)), 
-    precoVenda: produto.value,
-    quantidade: 1
-  });
+    vendas.push({
+      nome: produto.title,
+      precoCompra: parseFloat(extrairPrecoCompra(produto.description)), 
+      precoVenda: produto.value,
+      quantidade: 1
+    });
 
-  atualizarTabela();
+    atualizarTabela();
+  } catch (error) {
+    console.error(error);
+    alert('Não foi possível registrar a saída. Tente novamente.');
+  }
 }
 
 // Função para extrair preço de compra da descrição
 function extrairPrecoCompra(desc) {
-  // Supondo que a descrição tenha o formato "Compra: R$XX.XX | ..."
   const match = desc.match(/Compra: R\$([\d.,]+)/);
   return match ? parseFloat(match[1].replace(',', '.')) : 0;
 }
@@ -91,29 +100,41 @@ function atualizarRelatorio() {
 async function adicionarProduto(evento) {
   evento.preventDefault();
 
-  const nome = document.getElementById('nome').value;
+  const nome = document.getElementById('nome').value.trim();
   const quantidade = parseInt(document.getElementById('quantidade').value);
   const precoCompra = parseFloat(document.getElementById('precoCompra').value);
   const precoVenda = parseFloat(document.getElementById('precoVenda').value);
 
+  // Validação simples
+  if (!nome || isNaN(quantidade) || quantidade <= 0 || isNaN(precoCompra) || precoCompra <= 0 || isNaN(precoVenda) || precoVenda <= 0) {
+    alert('Preencha todos os campos corretamente.');
+    return;
+  }
+
   const descricao = `Compra: R$${precoCompra.toFixed(2)} | Qtde: ${quantidade}`;
 
-  await fetch(`${API_URL}/storage`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      title: nome,
-      description: descricao,
-      value: precoVenda,
-      quantidade 
-    }),
-  });
+  try {
+    const response = await fetch(`${API_URL}/storage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: nome,
+        description: descricao,
+        value: precoVenda,
+        quantidade 
+      }),
+    });
 
-  await carregarProdutos();
-  form.reset();
+    if (!response.ok) throw new Error('Erro ao adicionar produto');
+
+    await carregarProdutos();
+    form.reset();
+  } catch (error) {
+    console.error(error);
+    alert('Não foi possível adicionar o produto. Tente novamente.');
+  }
 }
 
 form.addEventListener('submit', adicionarProduto);
-
 
 carregarProdutos();
