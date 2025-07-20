@@ -57,7 +57,6 @@ async function registrarSaida(id) {
   }
 }
 
-// Função para extrair preço de compra da descrição
 function extrairPrecoCompra(desc) {
   const match = desc.match(/Compra: R\$([\d.,]+)/);
   return match ? parseFloat(match[1].replace(',', '.')) : 0;
@@ -72,21 +71,22 @@ function atualizarTabela() {
     const lucroTotal = lucroUnitario * quantidade;
 
     const linha = document.createElement('tr');
-    if (quantidade === 0) {
-      linha.classList.add('fora-estoque');
-    }
+    if (quantidade === 0) linha.classList.add('fora-estoque');
 
     linha.innerHTML = `
       <td>${produto.title}</td>
       <td>${quantidade}</td>
       <td>R$ ${lucroUnitario.toFixed(2)}</td>
       <td>R$ ${lucroTotal.toFixed(2)}</td>
-      <td><button ${quantidade === 0 ? 'disabled' : ''}>Vender</button></td>
+      <td></td>
     `;
 
-    // Adiciona evento ao botão para registrar a venda
-    const btnVender = linha.querySelector('button');
+    const tdAcoes = linha.querySelector('td:last-child');
+    const btnVender = document.createElement('button');
+    btnVender.textContent = 'Vender';
+    btnVender.disabled = quantidade === 0;
     btnVender.addEventListener('click', () => registrarSaida(produto.id));
+    tdAcoes.appendChild(btnVender);
 
     tabela.appendChild(linha);
   });
@@ -112,7 +112,6 @@ async function adicionarProduto(evento) {
   const precoCompra = parseFloat(document.getElementById('precoCompra').value);
   const precoVenda = parseFloat(document.getElementById('precoVenda').value);
 
-  // Validação simples
   if (!nome || isNaN(quantidade) || quantidade <= 0 || isNaN(precoCompra) || precoCompra <= 0 || isNaN(precoVenda) || precoVenda <= 0) {
     alert('Preencha todos os campos corretamente.');
     return;
