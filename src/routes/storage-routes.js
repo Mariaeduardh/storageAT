@@ -11,6 +11,7 @@ export async function storageRoutes(server) {
       title: z.string().min(1, 'O título é obrigatório'),
       description: z.string().optional(),
       value: z.coerce.number().min(0.01, 'O valor deve ser maior que zero'),
+      quantidade: z.coerce.number().min(0).optional().default(0), // adiciona quantidade
     });
 
     try {
@@ -52,6 +53,7 @@ export async function storageRoutes(server) {
       title: z.string().min(1, 'O título é obrigatório'),
       description: z.string().optional(),
       value: z.coerce.number().min(0.01, 'O valor deve ser maior que zero'),
+      quantidade: z.coerce.number().min(0).optional().default(0), // adiciona quantidade
     });
 
     try {
@@ -96,7 +98,6 @@ export async function storageRoutes(server) {
     }
   });
 
-  // 🔁 Nova rota de teste
   server.get('/ping', async (request, reply) => {
     try {
       await database.test(); // nova função no banco

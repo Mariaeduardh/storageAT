@@ -1,4 +1,4 @@
-import { sql } from './database/bd.js';
+import { sql } from './bd.js';
 
 async function createTable() {
   try {
