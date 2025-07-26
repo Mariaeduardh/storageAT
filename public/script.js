@@ -27,39 +27,18 @@ async function registrarSaida(id) {
     const produto = produtos.find(p => p.id === id);
     if (!produto || (produto.quantidade ?? 0) === 0) return;
 
-    const novaQuantidade = (produto.quantidade ?? 0) - 1;
+    const response = await fetch(`${API_URL}/storage/${id}/decrement`, {
+      method: 'PATCH',
+    });
 
-    if (novaQuantidade > 0) {
-      // Atualiza a quantidade no backend
-      const response = await fetch(`${API_URL}/storage/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: produto.title,
-          description: produto.description,
-          value: produto.value,
-          quantidade: novaQuantidade
-        }),
-      });
-
-      if (!response.ok) throw new Error('Erro ao registrar saída');
-
-      // Atualiza a quantidade local
-      produto.quantidade = novaQuantidade;
-
-    } else {
-      // Remove o produto do backend
-      const response = await fetch(`${API_URL}/storage/${id}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) throw new Error('Erro ao remover produto');
-
-      // Remove o produto localmente
-      produtos = produtos.filter(p => p.id !== id);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      alert(errorData.error || 'Erro ao registrar saída');
+      return;
     }
 
-    // Registra a venda localmente (para relatório)
+    await carregarProdutos();
+
     vendas.push({
       nome: produto.title,
       precoCompra: parseFloat(extrairPrecoCompra(produto.description)),
@@ -77,7 +56,9 @@ async function registrarSaida(id) {
 
 function extrairPrecoCompra(desc) {
   const match = desc.match(/Compra: R\$([\d.,]+)/);
-  return match ? parseFloat(match[1].replace(',', '.')) : 0;
+  if (!match) return 0;
+  // Remove todos os pontos (separadores de milhar) e troca vírgula por ponto
+  return parseFloat(match[1].replace(/\./g, '').replace(',', '.'));
 }
 
 function atualizarTabela() {
@@ -122,15 +103,27 @@ function atualizarRelatorio() {
   lucroVendasSpan.textContent = lucroVendas.toFixed(2);
 }
 
+function converterParaNumero(valorStr) {
+  return parseFloat(valorStr.replace(/\./g, '').replace(',', '.'));
+}
+
 async function adicionarProduto(evento) {
   evento.preventDefault();
 
   const nome = document.getElementById('nome').value.trim();
   const quantidade = parseInt(document.getElementById('quantidade').value);
-  const precoCompra = parseFloat(document.getElementById('precoCompra').value);
-  const precoVenda = parseFloat(document.getElementById('precoVenda').value);
+  const precoCompraStr = document.getElementById('precoCompra').value.trim();
+  const precoVendaStr = document.getElementById('precoVenda').value.trim();
 
-  if (!nome || isNaN(quantidade) || quantidade <= 0 || isNaN(precoCompra) || precoCompra <= 0 || isNaN(precoVenda) || precoVenda <= 0) {
+  const precoCompra = converterParaNumero(precoCompraStr);
+  const precoVenda = converterParaNumero(precoVendaStr);
+
+  if (
+    !nome ||
+    isNaN(quantidade) || quantidade <= 0 ||
+    isNaN(precoCompra) || precoCompra <= 0 ||
+    isNaN(precoVenda) || precoVenda <= 0
+  ) {
     alert('Preencha todos os campos corretamente.');
     return;
   }
@@ -152,22 +145,22 @@ async function adicionarProduto(evento) {
     if (!response.ok) throw new Error('Erro ao adicionar produto');
 
     await carregarProdutos();
-    form.reset();
+    form.reset();  // Garantindo que a variável 'form' seja usada aqui
+
   } catch (error) {
     console.error(error);
     alert('Não foi possível adicionar o produto. Tente novamente.');
   }
 }
 
-async function limparTabela() {
+btnLimpar.addEventListener('click', async () => {
   produtos = [];
   vendas = [];
   atualizarTabela();
   atualizarRelatorio();
   await carregarProdutos();
-}
+});
 
 form.addEventListener('submit', adicionarProduto);
-btnLimpar.addEventListener('click', limparTabela);
 
 carregarProdutos();

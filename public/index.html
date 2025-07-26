@@ -9,12 +9,13 @@
     <h1>Estoque de Eletrônicos</h1>
 
     <form id="formProduto">
-        <input type="text" id="nome" placeholder="Nome do Produto" required />
-        <input type="number" id="quantidade" placeholder="Quantidade" required />
-        <input type="number" id="precoCompra" placeholder="Preço de Compra" required />
-        <input type="number" id="precoVenda" placeholder="Preço de Venda" required />
-        <button type="submit">Adicionar Produto</button>
-    </form>
+    <input type="text" id="nome" placeholder="Nome do Produto" required />
+    <input type="number" id="quantidade" placeholder="Quantidade" required min="1" />
+    <input type="text" id="precoCompra" placeholder="Preço de Compra (ex: 3.000,00)" required />
+    <input type="text" id="precoVenda" placeholder="Preço de Venda (ex: 4.500,00)" required />
+    <button type="submit">Adicionar Produto</button>
+</form>
+
 
     <button id="btnLimpar">Limpar Tabela e Relatório</button>
 

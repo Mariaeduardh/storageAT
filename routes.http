@@ -26,4 +26,6 @@ Content-Type: application/json
 ### Deletar (troque pelo ID que você quer excluir)
 DELETE http://localhost:3333/storage/ID_AQUI
 
-GET /ping
+### Testar conexão com o banco
+GET http://localhost:3333/ping
+
