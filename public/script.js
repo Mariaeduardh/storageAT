@@ -1,127 +1,143 @@
-const API_URL = "https://storageat.onrender.com"; // backend no Render
+const API_URL = "https://storageat.onrender.com/storage";
 
 const form = document.getElementById('formProduto');
 const tabela = document.querySelector('#tabelaProdutos tbody');
 const totalProdutosSpan = document.getElementById('totalProdutos');
+const vendidosSpan = document.getElementById('totalVendidos');
 const lucroSpan = document.getElementById('lucroVendas');
 
-// 🟢 ADICIONAR PRODUTO
+let totalVendidos = 0; // Inicial, backend não controla vendas totais (precisa implementar se quiser)
+
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
 
   const produto = {
     title: document.getElementById('nome').value.trim(),
     quantidade: Number(document.getElementById('quantidade').value),
-    value: Number(document.getElementById('precoVenda').value),
-    precoCompra: Number(document.getElementById('precoCompra').value),
+    precoCompra: Number(document.getElementById('precoCompra').value.replace(",", ".")),
+    value: Number(document.getElementById('precoVenda').value.replace(",", "."))
   };
 
-  if (!produto.title || produto.quantidade <= 0 || produto.value <= 0 || produto.precoCompra <= 0) {
+  if (!produto.title || produto.quantidade <= 0 || produto.precoCompra <= 0 || produto.value <= 0) {
     alert('Preencha todos os campos corretamente!');
     return;
   }
 
-  await fetch(API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(produto),
-  });
+  try {
+    await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(produto),
+    });
 
-  form.reset();
-  carregarProdutos();
+    form.reset();
+    carregarProdutos();
+  } catch (err) {
+    alert('Erro ao adicionar produto');
+    console.error(err);
+  }
 });
 
-// 🟡 LIMPAR VISUALMENTE (NÃO APAGA DO BANCO)
+async function carregarProdutos() {
+  try {
+    const res = await fetch(API_URL);
+    const produtos = await res.json();
+
+    tabela.innerHTML = '';
+    let totalQuantidade = 0;
+    let lucroTotal = 0;
+
+    produtos.forEach(produto => {
+      const tr = document.createElement('tr');
+
+      const tdNome = document.createElement('td');
+      tdNome.textContent = produto.title;
+
+      const tdQuantidade = document.createElement('td');
+      tdQuantidade.textContent = produto.quantidade;
+
+      const tdValor = document.createElement('td');
+      tdValor.textContent = `R$ ${produto.value.toFixed(2)}`;
+
+      const lucroProduto = (produto.value - produto.precoCompra) * produto.quantidade;
+      lucroTotal += lucroProduto;
+
+      const tdLucro = document.createElement('td');
+      tdLucro.textContent = `R$ ${lucroProduto.toFixed(2)}`;
+
+      const tdAcoes = document.createElement('td');
+
+      const btnExcluir = document.createElement('button');
+      btnExcluir.textContent = 'Excluir';
+      btnExcluir.onclick = () => excluirProduto(produto.id);
+
+      tdAcoes.appendChild(btnExcluir);
+
+      const tdVender = document.createElement('td');
+      const btnVender = document.createElement('button');
+      btnVender.textContent = 'Vender 1';
+      btnVender.disabled = produto.quantidade <= 0;
+      btnVender.onclick = () => venderProduto(produto.id);
+
+      tdVender.appendChild(btnVender);
+
+      tr.append(tdNome, tdQuantidade, tdValor, tdLucro, tdAcoes, tdVender);
+      tabela.appendChild(tr);
+
+      totalQuantidade += produto.quantidade;
+    });
+
+    totalProdutosSpan.textContent = totalQuantidade;
+    lucroSpan.textContent = lucroTotal.toFixed(2);
+    vendidosSpan.textContent = totalVendidos;
+
+  } catch (err) {
+    alert('Erro ao carregar produtos');
+    console.error(err);
+  }
+}
+
+async function venderProduto(id) {
+  try {
+    const res = await fetch(`${API_URL}/${id}/decrement`, { method: 'PATCH' });
+    const data = await res.json();
+
+    if (res.ok) {
+      alert(data.message);
+      totalVendidos += 1; // Incrementa localmente
+      carregarProdutos();
+    } else {
+      alert(data.error || 'Erro ao vender o produto');
+    }
+  } catch (err) {
+    alert('Erro ao tentar vender o produto');
+    console.error(err);
+  }
+}
+
+async function excluirProduto(id) {
+  if (!confirm('Tem certeza que deseja excluir este produto?')) return;
+
+  try {
+    const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      carregarProdutos();
+    } else {
+      alert('Erro ao excluir produto');
+    }
+  } catch (err) {
+    alert('Erro ao excluir produto');
+    console.error(err);
+  }
+}
+
 document.getElementById('btnLimpar').addEventListener('click', () => {
+  if (!confirm('Limpar tabela e relatório? Isso não apaga dados do backend.')) return;
   tabela.innerHTML = '';
   totalProdutosSpan.textContent = '0';
   lucroSpan.textContent = '0.00';
+  vendidosSpan.textContent = '0';
+  totalVendidos = 0;
 });
 
-// 🔵 CARREGAR PRODUTOS
-async function carregarProdutos() {
-  const resposta = await fetch(API_URL);
-  const produtos = await resposta.json();
-
-  tabela.innerHTML = '';
-  let totalQuantidade = 0;
-  let lucroTotal = 0;
-
-  produtos.forEach((produto) => {
-    const tr = document.createElement('tr');
-
-    const tdNome = document.createElement('td');
-    tdNome.textContent = produto.title;
-
-    const tdQuantidade = document.createElement('td');
-    tdQuantidade.textContent = produto.quantidade;
-
-    const tdValor = document.createElement('td');
-    tdValor.textContent = `R$ ${produto.value.toFixed(2)}`;
-
-    const tdLucro = document.createElement('td');
-    const lucroUnitario = produto.value - produto.precoCompra;
-    const lucro = lucroUnitario * produto.quantidade;
-    tdLucro.textContent = `R$ ${lucro.toFixed(2)}`;
-
-    const tdAcoes = document.createElement('td');
-
-    // BOTÃO VENDER 1
-    const btnVender = document.createElement('button');
-    btnVender.textContent = 'Vender 1';
-    btnVender.disabled = produto.quantidade === 0;
-    btnVender.onclick = () => venderProduto(produto.id);
-
-    // BOTÃO EXCLUIR
-    const btnExcluir = document.createElement('button');
-    btnExcluir.textContent = 'Excluir';
-    btnExcluir.onclick = () => excluirProduto(produto.id);
-
-    tdAcoes.appendChild(btnVender);
-    tdAcoes.appendChild(btnExcluir);
-
-    tr.append(tdNome, tdQuantidade, tdValor, tdLucro, tdAcoes);
-    tabela.appendChild(tr);
-
-    totalQuantidade += produto.quantidade;
-    lucroTotal += lucro;
-  });
-
-  totalProdutosSpan.textContent = totalQuantidade;
-  lucroSpan.textContent = lucroTotal.toFixed(2);
-}
-
-// 🔴 FUNÇÃO VENDER 1
-async function venderProduto(id) {
-  try {
-    const resposta = await fetch(`${API_URL}/storage/${id}/decrement`, {
-      method: 'PATCH',
-    });
-
-    const data = await resposta.json();
-
-    if (resposta.ok) {
-      alert(data.message);
-    } else {
-      alert(data.error || 'Erro ao vender produto');
-    }
-
-    carregarProdutos();
-  } catch (error) {
-    console.error("Erro na venda:", error);
-    alert("Erro de conexão com o servidor.");
-  }
-}
-
-// 🧹 FUNÇÃO EXCLUIR
-async function excluirProduto(id) {
-  if (confirm('Tem certeza que deseja excluir este produto?')) {
-    await fetch(`${API_URL}/${id}`, {
-      method: 'DELETE',
-    });
-    carregarProdutos();
-  }
-}
-
-// Inicializa
 carregarProdutos();
