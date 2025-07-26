@@ -5,7 +5,8 @@ Content-Type: application/json
 {
   "title": "Notebook Dell",
   "description": "i7, 16GB RAM",
-  "value": "3500"
+  "value": 3500,
+  "quantidade": 20
 }
 
 ### Listar
@@ -24,3 +25,5 @@ Content-Type: application/json
 
 ### Deletar (troque pelo ID que você quer excluir)
 DELETE http://localhost:3333/storage/ID_AQUI
+
+GET /ping

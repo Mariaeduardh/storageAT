@@ -2,17 +2,13 @@ import { sql } from './bd.js';
 
 export class DatabasePostgres {
   async list(search) {
-    let result;
     if (search) {
-      result = await sql`
+      return await sql`
         SELECT * FROM storage
         WHERE title ILIKE ${'%' + search + '%'}
       `;
-    } else {
-      result = await sql`SELECT * FROM storage`;
     }
-
-    return result;
+    return await sql`SELECT * FROM storage`;
   }
 
   async entries() {
@@ -20,8 +16,15 @@ export class DatabasePostgres {
     return result.map(row => [row.id, row]);
   }
 
+  async find(id) {
+    return await sql`
+      SELECT * FROM storage WHERE id = ${id}
+    `;
+  }
+
   async create(data) {
     const { title, description, value, quantidade = 0 } = data;
+    console.log('Produto recebido para inserir no banco:', data);
 
     await sql`
       INSERT INTO storage (title, description, value, quantidade)

@@ -29,21 +29,35 @@ async function registrarSaida(id) {
 
     const novaQuantidade = (produto.quantidade ?? 0) - 1;
 
-    const response = await fetch(`${API_URL}/storage/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        title: produto.title,
-        description: produto.description,
-        value: produto.value,
-        quantidade: novaQuantidade
-      }),
-    });
+    if (novaQuantidade > 0) {
+      // Atualiza a quantidade no backend
+      const response = await fetch(`${API_URL}/storage/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: produto.title,
+          description: produto.description,
+          value: produto.value,
+          quantidade: novaQuantidade
+        }),
+      });
 
-    if (!response.ok) throw new Error('Erro ao registrar saída');
+      if (!response.ok) throw new Error('Erro ao registrar saída');
 
-    // Atualiza a quantidade local do produto
-    produto.quantidade = novaQuantidade;
+      // Atualiza a quantidade local
+      produto.quantidade = novaQuantidade;
+
+    } else {
+      // Remove o produto do backend
+      const response = await fetch(`${API_URL}/storage/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) throw new Error('Erro ao remover produto');
+
+      // Remove o produto localmente
+      produtos = produtos.filter(p => p.id !== id);
+    }
 
     // Registra a venda localmente (para relatório)
     vendas.push({
@@ -54,6 +68,7 @@ async function registrarSaida(id) {
     });
 
     atualizarTabela();
+
   } catch (error) {
     console.error(error);
     alert('Não foi possível registrar a saída. Tente novamente.');

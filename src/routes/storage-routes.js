@@ -28,12 +28,16 @@ export async function storageRoutes(server) {
     }
   });
 
-  // Listar itens
+  // Listar itens com estoque disponível
   server.get('/storage', async (request, reply) => {
     try {
       const search = request.query.search;
       const storage = await database.list(search);
-      return reply.send(storage);
+
+      // Mostrar apenas produtos com estoque > 0
+      const ativos = storage.filter(prod => prod.quantidade > 0);
+
+      return reply.send(ativos);
     } catch (error) {
       return reply.status(500).send({ error: 'Erro ao listar produtos' });
     }
@@ -42,7 +46,7 @@ export async function storageRoutes(server) {
   // Atualizar item
   server.put('/storage/:id', async (request, reply) => {
     const paramsSchema = z.object({
-      id: z.string().min(1, 'ID inválido'),  // Alterado para aceitar string qualquer
+      id: z.string().min(1, 'ID inválido'),
     });
 
     const bodySchema = z.object({
@@ -72,7 +76,7 @@ export async function storageRoutes(server) {
   // Remover item
   server.delete('/storage/:id', async (request, reply) => {
     const paramsSchema = z.object({
-      id: z.string().min(1, 'ID inválido'),  // Mesma alteração aqui
+      id: z.string().min(1, 'ID inválido'),
     });
 
     try {
@@ -97,6 +101,45 @@ export async function storageRoutes(server) {
       return reply.send({ message: 'Conexão com o banco funcionando!' });
     } catch (error) {
       return reply.status(500).send({ error: 'Falha ao conectar com o banco' });
+    }
+  });
+
+  // Rota PATCH para reduzir quantidade e deletar se chegar a zero
+  server.patch('/storage/:id/decrement', async (request, reply) => {
+    const paramsSchema = z.object({
+      id: z.string().min(1, 'ID inválido'),
+    });
+
+    try {
+      const { id } = paramsSchema.parse(request.params);
+
+      const [item] = await database.find(id); // método find que retorna array
+
+      if (!item) {
+        return reply.status(404).send({ error: 'Produto não encontrado' });
+      }
+
+      if (item.quantidade <= 0) {
+        return reply.status(400).send({ error: 'Produto sem estoque' });
+      }
+
+      const novaQuantidade = item.quantidade - 1;
+
+      if (novaQuantidade === 0) {
+        await database.delete(id);
+        return reply.status(200).send({ message: 'Produto removido por falta de estoque' });
+      } else {
+        await database.update(id, {
+          title: item.title,
+          description: item.description,
+          value: item.value,
+          quantidade: novaQuantidade,
+        });
+        return reply.status(200).send({ message: 'Quantidade reduzida com sucesso' });
+      }
+    } catch (error) {
+      console.error(error);
+      return reply.status(500).send({ error: 'Erro ao reduzir quantidade' });
     }
   });
 }
