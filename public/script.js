@@ -1,166 +1,127 @@
-const API_URL = 'https://storageat.onrender.com';
+const API_URL = "https://storageat.onrender.com"; // backend no Render
 
 const form = document.getElementById('formProduto');
 const tabela = document.querySelector('#tabelaProdutos tbody');
 const totalProdutosSpan = document.getElementById('totalProdutos');
-const totalVendidosSpan = document.getElementById('totalVendidos');
-const lucroVendasSpan = document.getElementById('lucroVendas');
-const btnLimpar = document.getElementById('btnLimpar');
+const lucroSpan = document.getElementById('lucroVendas');
 
-let produtos = [];
-let vendas = [];
+// 🟢 ADICIONAR PRODUTO
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
 
-async function carregarProdutos() {
-  try {
-    const response = await fetch(`${API_URL}/storage`);
-    if (!response.ok) throw new Error('Erro ao carregar produtos');
-    produtos = await response.json();
-    atualizarTabela();
-  } catch (error) {
-    console.error(error);
-    alert('Não foi possível carregar os produtos. Tente novamente.');
-  }
-}
+  const produto = {
+    title: document.getElementById('nome').value.trim(),
+    quantidade: Number(document.getElementById('quantidade').value),
+    value: Number(document.getElementById('precoVenda').value),
+    precoCompra: Number(document.getElementById('precoCompra').value),
+  };
 
-async function registrarSaida(id) {
-  try {
-    const produto = produtos.find(p => p.id === id);
-    if (!produto || (produto.quantidade ?? 0) === 0) return;
-
-    const response = await fetch(`${API_URL}/storage/${id}/decrement`, {
-      method: 'PATCH',
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      alert(errorData.error || 'Erro ao registrar saída');
-      return;
-    }
-
-    await carregarProdutos();
-
-    vendas.push({
-      nome: produto.title,
-      precoCompra: parseFloat(extrairPrecoCompra(produto.description)),
-      precoVenda: produto.value,
-      quantidade: 1
-    });
-
-    atualizarTabela();
-
-  } catch (error) {
-    console.error(error);
-    alert('Não foi possível registrar a saída. Tente novamente.');
-  }
-}
-
-function extrairPrecoCompra(desc) {
-  const match = desc.match(/Compra: R\$([\d.,]+)/);
-  if (!match) return 0;
-  // Remove todos os pontos (separadores de milhar) e troca vírgula por ponto
-  return parseFloat(match[1].replace(/\./g, '').replace(',', '.'));
-}
-
-function atualizarTabela() {
-  tabela.innerHTML = '';
-
-  produtos.forEach((produto) => {
-    const lucroUnitario = produto.value - extrairPrecoCompra(produto.description);
-    const quantidade = produto.quantidade ?? 0;
-    const lucroTotal = lucroUnitario * quantidade;
-
-    const linha = document.createElement('tr');
-    if (quantidade === 0) linha.classList.add('fora-estoque');
-
-    linha.innerHTML = `
-      <td>${produto.title}</td>
-      <td>${quantidade}</td>
-      <td>R$ ${lucroUnitario.toFixed(2)}</td>
-      <td>R$ ${lucroTotal.toFixed(2)}</td>
-      <td></td>
-    `;
-
-    const tdAcoes = linha.querySelector('td:last-child');
-    const btnVender = document.createElement('button');
-    btnVender.textContent = 'Vender';
-    btnVender.disabled = quantidade === 0;
-    btnVender.addEventListener('click', () => registrarSaida(produto.id));
-    tdAcoes.appendChild(btnVender);
-
-    tabela.appendChild(linha);
-  });
-
-  atualizarRelatorio();
-}
-
-function atualizarRelatorio() {
-  const totalProdutos = produtos.reduce((sum, p) => sum + (p.quantidade ?? 0), 0);
-  const totalVendidos = vendas.reduce((sum, v) => sum + v.quantidade, 0);
-  const lucroVendas = vendas.reduce((sum, v) => sum + ((v.precoVenda - v.precoCompra) * v.quantidade), 0);
-
-  totalProdutosSpan.textContent = totalProdutos;
-  totalVendidosSpan.textContent = totalVendidos;
-  lucroVendasSpan.textContent = lucroVendas.toFixed(2);
-}
-
-function converterParaNumero(valorStr) {
-  return parseFloat(valorStr.replace(/\./g, '').replace(',', '.'));
-}
-
-async function adicionarProduto(evento) {
-  evento.preventDefault();
-
-  const nome = document.getElementById('nome').value.trim();
-  const quantidade = parseInt(document.getElementById('quantidade').value);
-  const precoCompraStr = document.getElementById('precoCompra').value.trim();
-  const precoVendaStr = document.getElementById('precoVenda').value.trim();
-
-  const precoCompra = converterParaNumero(precoCompraStr);
-  const precoVenda = converterParaNumero(precoVendaStr);
-
-  if (
-    !nome ||
-    isNaN(quantidade) || quantidade <= 0 ||
-    isNaN(precoCompra) || precoCompra <= 0 ||
-    isNaN(precoVenda) || precoVenda <= 0
-  ) {
-    alert('Preencha todos os campos corretamente.');
+  if (!produto.title || produto.quantidade <= 0 || produto.value <= 0 || produto.precoCompra <= 0) {
+    alert('Preencha todos os campos corretamente!');
     return;
   }
 
-  const descricao = `Compra: R$${precoCompra.toFixed(2)} | Qtde: ${quantidade}`;
+  await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(produto),
+  });
 
+  form.reset();
+  carregarProdutos();
+});
+
+// 🟡 LIMPAR VISUALMENTE (NÃO APAGA DO BANCO)
+document.getElementById('btnLimpar').addEventListener('click', () => {
+  tabela.innerHTML = '';
+  totalProdutosSpan.textContent = '0';
+  lucroSpan.textContent = '0.00';
+});
+
+// 🔵 CARREGAR PRODUTOS
+async function carregarProdutos() {
+  const resposta = await fetch(API_URL);
+  const produtos = await resposta.json();
+
+  tabela.innerHTML = '';
+  let totalQuantidade = 0;
+  let lucroTotal = 0;
+
+  produtos.forEach((produto) => {
+    const tr = document.createElement('tr');
+
+    const tdNome = document.createElement('td');
+    tdNome.textContent = produto.title;
+
+    const tdQuantidade = document.createElement('td');
+    tdQuantidade.textContent = produto.quantidade;
+
+    const tdValor = document.createElement('td');
+    tdValor.textContent = `R$ ${produto.value.toFixed(2)}`;
+
+    const tdLucro = document.createElement('td');
+    const lucroUnitario = produto.value - produto.precoCompra;
+    const lucro = lucroUnitario * produto.quantidade;
+    tdLucro.textContent = `R$ ${lucro.toFixed(2)}`;
+
+    const tdAcoes = document.createElement('td');
+
+    // BOTÃO VENDER 1
+    const btnVender = document.createElement('button');
+    btnVender.textContent = 'Vender 1';
+    btnVender.disabled = produto.quantidade === 0;
+    btnVender.onclick = () => venderProduto(produto.id);
+
+    // BOTÃO EXCLUIR
+    const btnExcluir = document.createElement('button');
+    btnExcluir.textContent = 'Excluir';
+    btnExcluir.onclick = () => excluirProduto(produto.id);
+
+    tdAcoes.appendChild(btnVender);
+    tdAcoes.appendChild(btnExcluir);
+
+    tr.append(tdNome, tdQuantidade, tdValor, tdLucro, tdAcoes);
+    tabela.appendChild(tr);
+
+    totalQuantidade += produto.quantidade;
+    lucroTotal += lucro;
+  });
+
+  totalProdutosSpan.textContent = totalQuantidade;
+  lucroSpan.textContent = lucroTotal.toFixed(2);
+}
+
+// 🔴 FUNÇÃO VENDER 1
+async function venderProduto(id) {
   try {
-    const response = await fetch(`${API_URL}/storage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        title: nome,
-        description: descricao,
-        value: precoVenda,
-        quantidade
-      }),
+    const resposta = await fetch(`${API_URL}/storage/${id}/decrement`, {
+      method: 'PATCH',
     });
 
-    if (!response.ok) throw new Error('Erro ao adicionar produto');
+    const data = await resposta.json();
 
-    await carregarProdutos();
-    form.reset();  // Garantindo que a variável 'form' seja usada aqui
+    if (resposta.ok) {
+      alert(data.message);
+    } else {
+      alert(data.error || 'Erro ao vender produto');
+    }
 
+    carregarProdutos();
   } catch (error) {
-    console.error(error);
-    alert('Não foi possível adicionar o produto. Tente novamente.');
+    console.error("Erro na venda:", error);
+    alert("Erro de conexão com o servidor.");
   }
 }
 
-btnLimpar.addEventListener('click', async () => {
-  produtos = [];
-  vendas = [];
-  atualizarTabela();
-  atualizarRelatorio();
-  await carregarProdutos();
-});
+// 🧹 FUNÇÃO EXCLUIR
+async function excluirProduto(id) {
+  if (confirm('Tem certeza que deseja excluir este produto?')) {
+    await fetch(`${API_URL}/${id}`, {
+      method: 'DELETE',
+    });
+    carregarProdutos();
+  }
+}
 
-form.addEventListener('submit', adicionarProduto);
-
+// Inicializa
 carregarProdutos();

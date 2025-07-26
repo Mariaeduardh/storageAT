@@ -9,13 +9,12 @@
     <h1>Estoque de Eletrônicos</h1>
 
     <form id="formProduto">
-    <input type="text" id="nome" placeholder="Nome do Produto" required />
-    <input type="number" id="quantidade" placeholder="Quantidade" required min="1" />
-    <input type="text" id="precoCompra" placeholder="Preço de Compra (ex: 3.000,00)" required />
-    <input type="text" id="precoVenda" placeholder="Preço de Venda (ex: 4.500,00)" required />
-    <button type="submit">Adicionar Produto</button>
-</form>
-
+        <input type="text" id="nome" placeholder="Nome do Produto" required />
+        <input type="number" id="quantidade" placeholder="Quantidade" required min="1" />
+        <input type="number" id="precoCompra" placeholder="Preço de Compra" required step="0.01" />
+        <input type="number" id="precoVenda" placeholder="Preço de Venda" required step="0.01" />
+        <button type="submit">Adicionar Produto</button>
+    </form>
 
     <button id="btnLimpar">Limpar Tabela e Relatório</button>
 
@@ -28,6 +27,7 @@
                 <th>Valor</th>
                 <th>Lucro</th>
                 <th>Ações</th>
+                <th>Vender 1</th>
             </tr>
         </thead>
         <tbody></tbody>
@@ -36,8 +36,8 @@
     <h2>Relatório</h2>
     <div id="relatorio">
         <p>Total de Produtos em Estoque: <span id="totalProdutos">0</span></p>
-        <p>Total de Itens Vendidos: <span id="totalVendidos">0</span></p>
         <p>Lucro Acumulado das Vendas: R$ <span id="lucroVendas">0.00</span></p>
+        <p>Relatório Externo: <a href="https://docs.google.com/spreadsheets/d/SEU-LINK-AQUI" target="_blank">Acessar Planilha</a></p>
     </div>
 
     <script src="script.js"></script>
