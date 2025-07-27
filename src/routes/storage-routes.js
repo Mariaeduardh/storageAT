@@ -17,7 +17,7 @@ export async function storageRoutes(server) {
     const {
       title,
       description = '',
-      precoCompra,  // recebe o campo exatamente como vem do front-end
+      preco_compra,  // aqui deve receber o campo com esse nome
       value,
       quantidade = 0
     } = request.body;
@@ -25,10 +25,10 @@ export async function storageRoutes(server) {
     // Validação
     if (
       !title ||
-      precoCompra === undefined ||
+      preco_compra === undefined ||
       value === undefined ||
       quantidade < 0 ||
-      isNaN(precoCompra) ||
+      isNaN(preco_compra) ||
       isNaN(value) ||
       isNaN(quantidade)
     ) {
@@ -36,10 +36,9 @@ export async function storageRoutes(server) {
     }
 
     try {
-      // Usa precoCompra para inserir na coluna preco_compra do banco
       await sql`
         INSERT INTO storage (title, description, preco_compra, value, quantidade)
-        VALUES (${title}, ${description}, ${precoCompra}, ${value}, ${quantidade})
+        VALUES (${title}, ${description}, ${preco_compra}, ${value}, ${quantidade})
       `;
       return reply.status(201).send({ message: 'Produto adicionado com sucesso.' });
     } catch (error) {

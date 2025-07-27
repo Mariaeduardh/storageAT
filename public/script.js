@@ -14,7 +14,7 @@ form.addEventListener('submit', async (e) => {
   const produto = {
     title: document.getElementById('nome').value.trim(),
     quantidade: Number(document.getElementById('quantidade').value),
-    precoCompra: Number(document.getElementById('precoCompra').value.replace(',', '.')),
+    preco_compra: Number(document.getElementById('precoCompra').value.replace(',', '.')), // nome corrigido para preco_compra
     value: Number(document.getElementById('precoVenda').value.replace(',', '.')),
     description: document.getElementById('descricao')?.value.trim() || ''
   };
@@ -22,7 +22,7 @@ form.addEventListener('submit', async (e) => {
   if (
     !produto.title ||
     isNaN(produto.quantidade) || produto.quantidade <= 0 ||
-    isNaN(produto.precoCompra) || produto.precoCompra <= 0 ||
+    isNaN(produto.preco_compra) || produto.preco_compra <= 0 || // aqui também preco_compra
     isNaN(produto.value) || produto.value <= 0
   ) {
     alert('Preencha todos os campos corretamente!');
@@ -30,8 +30,6 @@ form.addEventListener('submit', async (e) => {
   }
 
   try {
-    console.log('Produto a ser enviado:', produto);
-
     const res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -76,7 +74,7 @@ async function carregarProdutos() {
       const valorVenda = Number(produto.value);
       tdValor.textContent = `R$ ${valorVenda.toFixed(2)}`;
 
-      const precoCompra = Number(produto.preco_compra ?? produto.precoCompra ?? 0);
+      const precoCompra = Number(produto.preco_compra ?? 0); // usa preco_compra sempre
       const lucroProduto = (valorVenda - precoCompra) * produto.quantidade;
       lucroTotal += lucroProduto;
 
