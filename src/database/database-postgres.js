@@ -1,4 +1,4 @@
-import { sql } from '../bd.js'; // ajuste o caminho conforme sua estrutura
+import { sql } from './bd.js'; // ajuste o caminho conforme sua estrutura
 
 export class DatabasePostgres {
   async list(search) {
