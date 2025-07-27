@@ -8,8 +8,13 @@ dotenv.config();
 
 const server = fastify();
 
+// ✅ Habilita CORS para Netlify, localhost e Live Server
 await server.register(cors, {
-  origin: ['https://storageat.netlify.app', 'http://localhost:3333'],
+  origin: [
+    'https://storageat.netlify.app', 
+    'http://localhost:3333',   
+    'http://127.0.0.1:5500',        
+    'http://127.0.0.1:5501'          
 });
 
 const sql = postgres(process.env.DATABASE_URL, {
@@ -20,8 +25,10 @@ const sql = postgres(process.env.DATABASE_URL, {
 
 server.decorate('sql', sql);
 
+// Registra as rotas
 server.register(storageRoutes);
 
+// Inicia o servidor
 const PORT = Number(process.env.PORT) || Number(process.env.LOCAL_PORT) || 3333;
 const HOST = '0.0.0.0';
 
