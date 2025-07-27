@@ -76,7 +76,7 @@ async function carregarProdutos() {
       const valorVenda = Number(produto.value);
       tdValor.textContent = `R$ ${valorVenda.toFixed(2)}`;
 
-      const precoCompra = Number(produto.preco_compra || produto.precoCompra || 0);
+      const precoCompra = Number(produto.preco_compra ?? produto.precoCompra ?? 0);
       const lucroProduto = (valorVenda - precoCompra) * produto.quantidade;
       lucroTotal += lucroProduto;
 
@@ -117,7 +117,7 @@ async function venderProduto(id) {
     const data = await res.json();
 
     if (res.ok) {
-      alert(data.message);
+      alert(data.message || 'Venda realizada com sucesso!');
       totalVendidos += 1;
       carregarProdutos();
     } else {

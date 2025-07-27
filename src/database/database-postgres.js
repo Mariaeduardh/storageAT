@@ -1,4 +1,4 @@
-import { sql } from './bd.js'; 
+import { sql } from './bd.js';
 
 export class DatabasePostgres {
   async list(search) {
@@ -9,7 +9,7 @@ export class DatabasePostgres {
           WHERE title ILIKE ${'%' + search + '%'}
         `;
       }
-      return await sql`SELECT * FROM storage`;
+      return await sql`SELECT * FROM storage ORDER BY title`;
     } catch (error) {
       console.error('Erro no list:', error);
       throw error;
@@ -30,14 +30,33 @@ export class DatabasePostgres {
 
   async create(data) {
     try {
-      const { title, description = '', precoCompra, value, quantidade = 0 } = data;
+      const {
+        title,
+        description = '',
+        precoCompra,
+        value,
+        quantidade = 0
+      } = data;
+
+      if (
+        !title ||
+        precoCompra === undefined ||
+        value === undefined ||
+        quantidade === undefined
+      ) {
+        throw new Error('Campos obrigatórios estão ausentes ou inválidos.');
+      }
+
+      console.log('🔍 Dados recebidos para INSERT:', {
+        title, description, precoCompra, value, quantidade
+      });
 
       await sql`
         INSERT INTO storage (title, description, preco_compra, value, quantidade)
         VALUES (${title}, ${description}, ${precoCompra}, ${value}, ${quantidade})
       `;
     } catch (error) {
-      console.error('Erro no create:', error);
+      console.error('❌ Erro no método create:', error);
       throw error;
     }
   }
@@ -68,6 +87,24 @@ export class DatabasePostgres {
       `;
     } catch (error) {
       console.error('Erro no delete:', error);
+      throw error;
+    }
+  }
+
+  async decrement(id) {
+    try {
+      const result = await sql`
+        UPDATE storage
+        SET quantidade = quantidade - 1
+        WHERE id = ${id} AND quantidade > 0
+        RETURNING *
+      `;
+
+      if (result.length === 0) {
+        throw new Error('Produto não encontrado ou quantidade já é 0');
+      }
+    } catch (error) {
+      console.error('Erro no decrement:', error);
       throw error;
     }
   }
