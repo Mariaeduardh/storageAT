@@ -1,4 +1,4 @@
-import { sql } from './bd.js'; // ajuste o caminho conforme sua estrutura
+import { sql } from './bd.js'; 
 
 export class DatabasePostgres {
   async list(search) {
@@ -30,7 +30,7 @@ export class DatabasePostgres {
 
   async create(data) {
     try {
-     const { title, description, precoCompra, value, quantidade = 0 } = data;
+      const { title, description = '', precoCompra, value, quantidade = 0 } = data;
 
       await sql`
         INSERT INTO storage (title, description, preco_compra, value, quantidade)
@@ -44,7 +44,7 @@ export class DatabasePostgres {
 
   async update(id, data) {
     try {
-      const { title, description, precoCompra, value, quantidade = 0 } = data;
+      const { title, description = '', precoCompra, value, quantidade = 0 } = data;
 
       await sql`
         UPDATE storage

@@ -16,14 +16,22 @@ form.addEventListener('submit', async (e) => {
     quantidade: Number(document.getElementById('quantidade').value),
     precoCompra: Number(document.getElementById('precoCompra').value.replace(',', '.')),
     value: Number(document.getElementById('precoVenda').value.replace(',', '.')),
+    description: document.getElementById('descricao')?.value.trim() || ''
   };
 
-  if (!produto.title || produto.quantidade <= 0 || produto.precoCompra <= 0 || produto.value <= 0) {
+  if (
+    !produto.title ||
+    isNaN(produto.quantidade) || produto.quantidade <= 0 ||
+    isNaN(produto.precoCompra) || produto.precoCompra <= 0 ||
+    isNaN(produto.value) || produto.value <= 0
+  ) {
     alert('Preencha todos os campos corretamente!');
     return;
   }
 
   try {
+    console.log('Produto a ser enviado:', produto);
+
     const res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
