@@ -1,153 +1,76 @@
-import { z } from 'zod';
-import { DatabasePostgres } from '../database/database-postgres.js';
-
-const database = new DatabasePostgres();
-
 export async function storageRoutes(server) {
-  // Criar produto
-  server.post('/storage', async (request, reply) => {
-    const bodySchema = z.object({
-      title: z.string().min(1, 'O título é obrigatório'),
-      description: z.string().optional().default(''),
-      precoCompra: z.coerce.number().min(0.01, 'O preço de compra deve ser maior que zero'),
-      value: z.coerce.number().min(0.01, 'O valor deve ser maior que zero'),
-      quantidade: z.coerce.number().min(0).optional().default(0),
-    });
+  const sql = server.sql;
 
-    try {
-      const data = bodySchema.parse(request.body);
-      await database.create(data);
-      return reply.status(201).send({ message: 'Produto criado com sucesso' });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return reply.status(400).send({
-          error: 'Erro de validação',
-          issues: error.issues,
-        });
-      }
-      console.error('Erro ao criar produto:', error);
-      return reply.status(500).send({ error: 'Erro interno ao criar produto' });
-    }
-  });
-
-  // Listar produtos com estoque > 0
+  // GET - Listar produtos
   server.get('/storage', async (request, reply) => {
     try {
-      const search = request.query.search;
-      const storage = await database.list(search);
-      const ativos = storage.filter(prod => prod.quantidade > 0);
-      return reply.send(ativos);
+      const produtos = await sql`SELECT * FROM storage ORDER BY title`;
+      return produtos;
     } catch (error) {
       console.error('Erro ao listar produtos:', error);
       return reply.status(500).send({ error: 'Erro ao listar produtos' });
     }
   });
 
-  // Atualizar produto
-  server.put('/storage/:id', async (request, reply) => {
-    const paramsSchema = z.object({
-      id: z.string().min(1, 'ID inválido'),
-    });
+  // POST - Criar produto
+  server.post('/storage', async (request, reply) => {
+    const { title, description = '', precoCompra, value, quantidade = 0 } = request.body;
 
-    const bodySchema = z.object({
-      title: z.string().min(1, 'O título é obrigatório'),
-      description: z.string().optional().default(''),
-      precoCompra: z.coerce.number().min(0.01, 'O preço de compra deve ser maior que zero'),
-      value: z.coerce.number().min(0.01, 'O valor deve ser maior que zero'),
-      quantidade: z.coerce.number().min(0).optional().default(0),
-    });
+    // Validação básica
+    if (
+      !title ||
+      precoCompra === undefined ||
+      value === undefined ||
+      quantidade < 0 ||
+      isNaN(precoCompra) ||
+      isNaN(value) ||
+      isNaN(quantidade)
+    ) {
+      return reply.status(400).send({ error: 'Campos obrigatórios ausentes ou inválidos.' });
+    }
 
     try {
-      const { id } = paramsSchema.parse(request.params);
-      const data = bodySchema.parse(request.body);
-
-      await database.update(id, data);
-      return reply.status(204).send();
+      await sql`
+        INSERT INTO storage (title, description, preco_compra, value, quantidade)
+        VALUES (${title}, ${description}, ${precoCompra}, ${value}, ${quantidade})
+      `;
+      return reply.status(201).send({ message: 'Produto adicionado com sucesso.' });
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return reply.status(400).send({
-          error: 'Erro de validação',
-          issues: error.issues,
-        });
-      }
-      console.error('Erro ao atualizar produto:', error);
-      return reply.status(500).send({ error: 'Erro ao atualizar produto' });
+      console.error('Erro ao adicionar produto:', error);
+      return reply.status(500).send({ error: 'Erro interno ao adicionar produto.' });
     }
   });
 
-  // Deletar produto
-  server.delete('/storage/:id', async (request, reply) => {
-    const paramsSchema = z.object({
-      id: z.string().min(1, 'ID inválido'),
-    });
-
-    try {
-      const { id } = paramsSchema.parse(request.params);
-      await database.delete(id);
-      return reply.status(204).send();
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return reply.status(400).send({
-          error: 'ID inválido',
-          issues: error.issues,
-        });
-      }
-      console.error('Erro ao deletar produto:', error);
-      return reply.status(500).send({ error: 'Erro ao deletar produto' });
-    }
-  });
-
-  // PATCH para decrementar quantidade e deletar se quantidade for 0
+  // PATCH - Vender (decrementar quantidade)
   server.patch('/storage/:id/decrement', async (request, reply) => {
-    const paramsSchema = z.object({
-      id: z.string().min(1, 'ID inválido'),
-    });
+    const { id } = request.params;
 
     try {
-      const { id } = paramsSchema.parse(request.params);
+      const [produto] = await sql`SELECT * FROM storage WHERE id = ${id}`;
+      if (!produto) return reply.status(404).send({ error: 'Produto não encontrado.' });
 
-      const item = await database.find(id);
-
-      if (!item) {
-        return reply.status(404).send({ error: 'Produto não encontrado' });
+      if (produto.quantidade <= 0) {
+        return reply.status(400).send({ error: 'Estoque esgotado.' });
       }
 
-      if (item.quantidade <= 0) {
-        return reply.status(400).send({ error: 'Produto sem estoque' });
-      }
-
-      const novaQuantidade = item.quantidade - 1;
-
-      if (novaQuantidade === 0) {
-        await database.delete(id);
-        return reply.status(200).send({ message: 'Produto removido por falta de estoque' });
-      } else {
-        const dadosUpdate = {
-          title: item.title,
-          description: item.description || '',
-          precoCompra: item.preco_compra,
-          value: Number(item.value),
-          quantidade: novaQuantidade,
-        };
-
-        await database.update(id, dadosUpdate);
-
-        return reply.status(200).send({ message: 'Quantidade reduzida com sucesso' });
-      }
+      await sql`UPDATE storage SET quantidade = quantidade - 1 WHERE id = ${id}`;
+      return reply.send({ message: 'Produto vendido com sucesso.' });
     } catch (error) {
-      console.error('Erro ao reduzir quantidade:', error);
-      return reply.status(500).send({ error: 'Erro ao reduzir quantidade' });
+      console.error('Erro ao vender produto:', error);
+      return reply.status(500).send({ error: 'Erro interno ao vender produto.' });
     }
   });
 
-  // Endpoint ping para testar conexão com banco
-  server.get('/ping', async (request, reply) => {
+  // DELETE - Excluir produto
+  server.delete('/storage/:id', async (request, reply) => {
+    const { id } = request.params;
+
     try {
-      await database.test();
-      return reply.send({ message: 'Conexão com o banco funcionando!' });
+      await sql`DELETE FROM storage WHERE id = ${id}`;
+      return reply.send({ message: 'Produto excluído com sucesso.' });
     } catch (error) {
-      console.error('Falha ao conectar com o banco:', error);
-      return reply.status(500).send({ error: 'Falha ao conectar com o banco' });
+      console.error('Erro ao excluir produto:', error);
+      return reply.status(500).send({ error: 'Erro interno ao excluir produto.' });
     }
   });
 }
