@@ -1,10 +1,7 @@
-// src/database/setupDatabase.js
 export async function setupDatabase(sql) {
   try {
-    // Habilita extensão para gerar UUIDs
     await sql`CREATE EXTENSION IF NOT EXISTS "pgcrypto"`;
 
-    // Cria tabela caso não exista, com todas colunas obrigatórias
     await sql`
       CREATE TABLE IF NOT EXISTS storage (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -16,13 +13,11 @@ export async function setupDatabase(sql) {
       )
     `;
 
-    // Garante que a coluna preco_compra exista (adiciona se faltar)
     await sql`
       ALTER TABLE storage
       ADD COLUMN IF NOT EXISTS preco_compra NUMERIC(10, 2) NOT NULL DEFAULT 0
     `;
 
-    // Garante que a coluna quantidade exista (adiciona se faltar)
     await sql`
       ALTER TABLE storage
       ADD COLUMN IF NOT EXISTS quantidade INTEGER NOT NULL DEFAULT 0
