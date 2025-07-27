@@ -97,7 +97,14 @@ async function carregarProdutos() {
 
 async function venderProduto(id) {
   try {
-    const res = await fetch(`${API_URL}/${id}/decrement`, { method: 'PATCH' });
+    const res = await fetch(`${API_URL}/${id}/decrement`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ quantidade: 1 }) // <- ENVIA CORPO COM VALOR
+    });
+
     const data = await res.json();
 
     if (res.ok) {
@@ -112,6 +119,7 @@ async function venderProduto(id) {
     console.error(err);
   }
 }
+
 
 async function excluirProduto(id) {
   if (!confirm('Tem certeza que deseja excluir este produto?')) return;
