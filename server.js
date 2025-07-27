@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 import cors from '@fastify/cors';
 
 import { setupDatabase } from './src/database/setupDatabase.js';
-import { storageRoutes } from './src/routes/storage-routes.js'; // Ajuste caminho também
+import { storageRoutes } from './src/routes/storage-routes.js';
 
 dotenv.config();
 
@@ -25,7 +25,7 @@ async function startServer() {
 
   // Conexão com o banco PostgreSQL via pacote postgres
   const sql = postgres(process.env.DATABASE_URL, {
-    ssl: { rejectUnauthorized: false }, // importante para Render.com e outros
+    ssl: { rejectUnauthorized: false },
   });
 
   // Executa setup do banco (cria tabela e colunas se necessário)
@@ -40,7 +40,6 @@ async function startServer() {
   const PORT = Number(process.env.PORT) || Number(process.env.LOCAL_PORT) || 3333;
   const HOST = '0.0.0.0';
 
-  // Inicia servidor
   server.listen({ port: PORT, host: HOST }, (err, address) => {
     if (err) {
       console.error('Erro ao iniciar servidor:', err);

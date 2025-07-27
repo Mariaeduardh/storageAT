@@ -1,7 +1,5 @@
-import { sql } from './bd.js';
-import { setupDatabase } from './src/database/setupDatabase.js';
-
-export async function setupDatabase() {
+// src/database/setupDatabase.js
+export async function setupDatabase(sql) {
   try {
     // Habilita extensão para gerar UUIDs
     await sql`CREATE EXTENSION IF NOT EXISTS "pgcrypto"`;
