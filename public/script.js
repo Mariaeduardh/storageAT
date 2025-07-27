@@ -6,7 +6,7 @@ const totalProdutosSpan = document.getElementById('totalProdutos');
 const vendidosSpan = document.getElementById('totalVendidos');
 const lucroSpan = document.getElementById('lucroVendas');
 
-let totalVendidos = 0; // Inicial, backend não controla vendas totais (precisa implementar se quiser)
+let totalVendidos = 0; // Contador local de vendas
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -57,20 +57,20 @@ async function carregarProdutos() {
       tdQuantidade.textContent = produto.quantidade;
 
       const tdValor = document.createElement('td');
-      tdValor.textContent = `R$ ${produto.value.toFixed(2)}`;
+      const valorVenda = Number(produto.value);
+      tdValor.textContent = `R$ ${valorVenda.toFixed(2)}`;
 
-      const lucroProduto = (produto.value - produto.precoCompra) * produto.quantidade;
+      const precoCompra = Number(produto.precoCompra);
+      const lucroProduto = (valorVenda - precoCompra) * produto.quantidade;
       lucroTotal += lucroProduto;
 
       const tdLucro = document.createElement('td');
       tdLucro.textContent = `R$ ${lucroProduto.toFixed(2)}`;
 
       const tdAcoes = document.createElement('td');
-
       const btnExcluir = document.createElement('button');
       btnExcluir.textContent = 'Excluir';
       btnExcluir.onclick = () => excluirProduto(produto.id);
-
       tdAcoes.appendChild(btnExcluir);
 
       const tdVender = document.createElement('td');
@@ -78,7 +78,6 @@ async function carregarProdutos() {
       btnVender.textContent = 'Vender 1';
       btnVender.disabled = produto.quantidade <= 0;
       btnVender.onclick = () => venderProduto(produto.id);
-
       tdVender.appendChild(btnVender);
 
       tr.append(tdNome, tdQuantidade, tdValor, tdLucro, tdAcoes, tdVender);
@@ -104,7 +103,7 @@ async function venderProduto(id) {
 
     if (res.ok) {
       alert(data.message);
-      totalVendidos += 1; // Incrementa localmente
+      totalVendidos += 1;
       carregarProdutos();
     } else {
       alert(data.error || 'Erro ao vender o produto');
