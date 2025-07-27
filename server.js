@@ -8,6 +8,7 @@ dotenv.config();
 
 const server = fastify();
 
+// Configuração CORS para permitir front-end
 await server.register(cors, {
   origin: [
     'https://storageat.netlify.app',
@@ -19,11 +20,15 @@ await server.register(cors, {
   preflight: true,
 });
 
+// Conexão com o banco PostgreSQL via pacote postgres
 const sql = postgres(process.env.DATABASE_URL, {
-  ssl: { rejectUnauthorized: false },
+  ssl: { rejectUnauthorized: false }, // importante para Render.com e outros
 });
 
+// Disponibiliza a conexão via decorator para as rotas
 server.decorate('sql', sql);
+
+// Registra as rotas do storage (produtos)
 server.register(storageRoutes);
 
 const PORT = Number(process.env.PORT) || Number(process.env.LOCAL_PORT) || 3333;

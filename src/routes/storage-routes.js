@@ -4,10 +4,8 @@ import { DatabasePostgres } from '../database/database-postgres.js';
 const database = new DatabasePostgres();
 
 export async function storageRoutes(server) {
-  // Criar item
+  // Criar produto
   server.post('/storage', async (request, reply) => {
-    console.log('Recebido no POST /storage:', request.body);
-
     const bodySchema = z.object({
       title: z.string().min(1, 'O título é obrigatório'),
       description: z.string().optional().default(''),
@@ -18,17 +16,13 @@ export async function storageRoutes(server) {
 
     try {
       const data = bodySchema.parse(request.body);
-      console.log('Dados validados:', data);
-
       await database.create(data);
       return reply.status(201).send({ message: 'Produto criado com sucesso' });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        console.log('Erro de validação Zod:', error.issues);
         return reply.status(400).send({
           error: 'Erro de validação',
           issues: error.issues,
-          receivedBody: request.body,
         });
       }
       console.error('Erro ao criar produto:', error);
@@ -36,7 +30,7 @@ export async function storageRoutes(server) {
     }
   });
 
-  // Listar itens com estoque disponível
+  // Listar produtos com estoque > 0
   server.get('/storage', async (request, reply) => {
     try {
       const search = request.query.search;
@@ -49,7 +43,7 @@ export async function storageRoutes(server) {
     }
   });
 
-  // Atualizar item
+  // Atualizar produto
   server.put('/storage/:id', async (request, reply) => {
     const paramsSchema = z.object({
       id: z.string().min(1, 'ID inválido'),
@@ -81,7 +75,7 @@ export async function storageRoutes(server) {
     }
   });
 
-  // Remover item
+  // Deletar produto
   server.delete('/storage/:id', async (request, reply) => {
     const paramsSchema = z.object({
       id: z.string().min(1, 'ID inválido'),
@@ -103,7 +97,7 @@ export async function storageRoutes(server) {
     }
   });
 
-  // PATCH para decrementar quantidade e deletar se zero
+  // PATCH para decrementar quantidade e deletar se quantidade for 0
   server.patch('/storage/:id/decrement', async (request, reply) => {
     const paramsSchema = z.object({
       id: z.string().min(1, 'ID inválido'),
@@ -111,10 +105,8 @@ export async function storageRoutes(server) {
 
     try {
       const { id } = paramsSchema.parse(request.params);
-      console.log('ID para decrementar:', id);
 
-      const [item] = await database.find(id);
-      console.log('Item encontrado:', item);
+      const item = await database.find(id);
 
       if (!item) {
         return reply.status(404).send({ error: 'Produto não encontrado' });
@@ -125,29 +117,18 @@ export async function storageRoutes(server) {
       }
 
       const novaQuantidade = item.quantidade - 1;
-      console.log('Nova quantidade:', novaQuantidade);
 
       if (novaQuantidade === 0) {
         await database.delete(id);
         return reply.status(200).send({ message: 'Produto removido por falta de estoque' });
       } else {
-        if (!item.title || item.value == null || item.preco_compra == null) {
-          return reply.status(400).send({ error: 'Dados inválidos no produto' });
-        }
-
-        const valorConvertido = Number(item.value);
-        if (isNaN(valorConvertido)) {
-          return reply.status(400).send({ error: 'Valor do produto inválido' });
-        }
-
         const dadosUpdate = {
           title: item.title,
           description: item.description || '',
           precoCompra: item.preco_compra,
-          value: valorConvertido,
+          value: Number(item.value),
           quantidade: novaQuantidade,
         };
-        console.log('Dados para update:', dadosUpdate);
 
         await database.update(id, dadosUpdate);
 
@@ -159,7 +140,7 @@ export async function storageRoutes(server) {
     }
   });
 
-  // Endpoint teste conexão banco
+  // Endpoint ping para testar conexão com banco
   server.get('/ping', async (request, reply) => {
     try {
       await database.test();
