@@ -16,16 +16,18 @@ export class DatabasePostgres {
     }
   }
 
-  async find(id) {
-    try {
-      return await sql`
-        SELECT * FROM storage WHERE id = ${id}
-      `;
-    } catch (error) {
-      console.error('Erro no find:', error);
-      throw error;
-    }
+async find(id) {
+  try {
+    const results = await sql`
+      SELECT * FROM storage WHERE id = ${id} LIMIT 1
+    `;
+    return results[0];
+  } catch (error) {
+    console.error('Erro no find:', error);
+    throw error;
   }
+}
+
 
   async create(data) {
     try {

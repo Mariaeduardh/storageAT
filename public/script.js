@@ -31,8 +31,8 @@ form.addEventListener('submit', async (e) => {
     });
 
     if (!res.ok) {
-      const errorData = await res.json();
-      alert(`Erro ao adicionar produto: ${errorData.error || 'Erro desconhecido'}`);
+      const data = await res.json();
+      alert('Erro ao adicionar produto: ' + (data.error || 'Erro desconhecido'));
       return;
     }
 
@@ -47,6 +47,8 @@ form.addEventListener('submit', async (e) => {
 async function carregarProdutos() {
   try {
     const res = await fetch(API_URL);
+    if (!res.ok) throw new Error('Erro ao carregar produtos');
+
     const produtos = await res.json();
 
     tabela.innerHTML = '';
@@ -63,9 +65,11 @@ async function carregarProdutos() {
       tdQuantidade.textContent = produto.quantidade;
 
       const tdValor = document.createElement('td');
-      tdValor.textContent = `R$ ${produto.value.toFixed(2)}`;
+      const valorVenda = Number(produto.value);
+      tdValor.textContent = `R$ ${valorVenda.toFixed(2)}`;
 
-      const lucroProduto = (produto.value - produto.precoCompra) * produto.quantidade;
+      const precoCompra = Number(produto.preco_compra || produto.precoCompra || 0);
+      const lucroProduto = (valorVenda - precoCompra) * produto.quantidade;
       lucroTotal += lucroProduto;
 
       const tdLucro = document.createElement('td');
@@ -101,15 +105,12 @@ async function carregarProdutos() {
 
 async function venderProduto(id) {
   try {
-    const res = await fetch(`${API_URL}/${id}/decrement`, {
-      method: 'PATCH',
-    });
-
+    const res = await fetch(`${API_URL}/${id}/decrement`, { method: 'PATCH' });
     const data = await res.json();
 
     if (res.ok) {
       alert(data.message);
-      totalVendidos++;
+      totalVendidos += 1;
       carregarProdutos();
     } else {
       alert(data.error || 'Erro ao vender o produto');

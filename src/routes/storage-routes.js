@@ -3,20 +3,11 @@ import { DatabasePostgres } from '../database/database-postgres.js';
 
 const database = new DatabasePostgres();
 
-function mapDbToApi(produto) {
-  return {
-    id: produto.id,
-    title: produto.title,
-    description: produto.description,
-    precoCompra: Number(produto.preco_compra),
-    value: Number(produto.value),
-    quantidade: produto.quantidade,
-  };
-}
-
 export async function storageRoutes(server) {
   // Criar item
   server.post('/storage', async (request, reply) => {
+    console.log('Recebido no POST /storage:', request.body);
+
     const bodySchema = z.object({
       title: z.string().min(1, 'O título é obrigatório'),
       description: z.string().optional().default(''),
@@ -27,13 +18,17 @@ export async function storageRoutes(server) {
 
     try {
       const data = bodySchema.parse(request.body);
+      console.log('Dados validados:', data);
+
       await database.create(data);
       return reply.status(201).send({ message: 'Produto criado com sucesso' });
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.log('Erro de validação Zod:', error.issues);
         return reply.status(400).send({
           error: 'Erro de validação',
           issues: error.issues,
+          receivedBody: request.body,
         });
       }
       console.error('Erro ao criar produto:', error);
@@ -47,8 +42,7 @@ export async function storageRoutes(server) {
       const search = request.query.search;
       const storage = await database.list(search);
       const ativos = storage.filter(prod => prod.quantidade > 0);
-      const produtosMapeados = ativos.map(mapDbToApi);
-      return reply.send(produtosMapeados);
+      return reply.send(ativos);
     } catch (error) {
       console.error('Erro ao listar produtos:', error);
       return reply.status(500).send({ error: 'Erro ao listar produtos' });
@@ -117,8 +111,10 @@ export async function storageRoutes(server) {
 
     try {
       const { id } = paramsSchema.parse(request.params);
+      console.log('ID para decrementar:', id);
 
       const [item] = await database.find(id);
+      console.log('Item encontrado:', item);
 
       if (!item) {
         return reply.status(404).send({ error: 'Produto não encontrado' });
@@ -129,18 +125,29 @@ export async function storageRoutes(server) {
       }
 
       const novaQuantidade = item.quantidade - 1;
+      console.log('Nova quantidade:', novaQuantidade);
 
       if (novaQuantidade === 0) {
         await database.delete(id);
         return reply.status(200).send({ message: 'Produto removido por falta de estoque' });
       } else {
+        if (!item.title || item.value == null || item.preco_compra == null) {
+          return reply.status(400).send({ error: 'Dados inválidos no produto' });
+        }
+
+        const valorConvertido = Number(item.value);
+        if (isNaN(valorConvertido)) {
+          return reply.status(400).send({ error: 'Valor do produto inválido' });
+        }
+
         const dadosUpdate = {
           title: item.title,
           description: item.description || '',
-          precoCompra: Number(item.preco_compra),
-          value: Number(item.value),
+          precoCompra: item.preco_compra,
+          value: valorConvertido,
           quantidade: novaQuantidade,
         };
+        console.log('Dados para update:', dadosUpdate);
 
         await database.update(id, dadosUpdate);
 
