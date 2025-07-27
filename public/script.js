@@ -14,7 +14,7 @@ form.addEventListener('submit', async (e) => {
   const produto = {
     title: document.getElementById('nome').value.trim(),
     quantidade: Number(document.getElementById('quantidade').value),
-    precoCompra: Number(document.getElementById('precoCompra').value.replace(',', '.')),
+    preco_compra: Number(document.getElementById('precoCompra').value.replace(',', '.')),
     value: Number(document.getElementById('precoVenda').value.replace(',', '.')),
   };
 

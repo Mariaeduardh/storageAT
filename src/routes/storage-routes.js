@@ -32,16 +32,17 @@ export async function storageRoutes(server) {
 
   // Listar itens com estoque disponível
   server.get('/storage', async (request, reply) => {
-    try {
-      const search = request.query.search;
-      const storage = await database.list(search);
-      const ativos = storage.filter(prod => prod.quantidade > 0);
-      return reply.send(ativos);
-    } catch (error) {
-      console.error('Erro ao listar produtos:', error);
-      return reply.status(500).send({ error: 'Erro ao listar produtos' });
-    }
+  try {
+    const search = request.query.search;
+    const storage = await database.list(search);
+    const ativos = storage.filter(prod => prod.quantidade > 0);
+    return reply.send(ativos);
+  } catch (error) {
+    console.error('Erro ao listar produtos:', error); // Certifique que isso esteja logando
+    return reply.status(500).send({ error: 'Erro ao listar produtos' });
+  }
   });
+
 
   // Atualizar item
   server.put('/storage/:id', async (request, reply) => {

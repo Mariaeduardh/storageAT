@@ -39,7 +39,8 @@ export class DatabasePostgres {
 
   async create(data) {
     try {
-      const { title, description, precoCompra, value, quantidade = 0 } = data;
+      const { title, description, preco_compra, value, quantidade = 0 } = data;
+
       console.log('Produto recebido para inserir no banco:', data);
 
       await sql`
