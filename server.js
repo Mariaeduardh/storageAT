@@ -3,7 +3,6 @@ import postgres from 'postgres';
 import dotenv from 'dotenv';
 import cors from '@fastify/cors';
 
-import { setupDatabase } from './src/database/setupDatabase.js';
 import { storageRoutes } from './src/routes/storage-routes.js';
 
 dotenv.config();
@@ -25,8 +24,6 @@ async function startServer() {
   const sql = postgres(process.env.DATABASE_URL, {
     ssl: { rejectUnauthorized: false },
   });
-
-  await setupDatabase(sql);
 
   server.decorate('sql', sql);
 
