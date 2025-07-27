@@ -30,7 +30,7 @@ export class DatabasePostgres {
 
   async create(data) {
     try {
-      const { title, description, precoCompra, value, quantidade = 0 } = data;
+     const { title, description, precoCompra, value, quantidade = 0 } = data;
 
       await sql`
         INSERT INTO storage (title, description, preco_compra, value, quantidade)
