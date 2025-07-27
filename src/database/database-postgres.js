@@ -39,12 +39,12 @@ export class DatabasePostgres {
 
   async create(data) {
     try {
-      const { title, description, value, quantidade = 0 } = data;
+      const { title, description, precoCompra, value, quantidade = 0 } = data;
       console.log('Produto recebido para inserir no banco:', data);
 
       await sql`
-        INSERT INTO storage (title, description, value, quantidade)
-        VALUES (${title}, ${description}, ${value}, ${quantidade})
+        INSERT INTO storage (title, description, preco_compra, value, quantidade)
+        VALUES (${title}, ${description}, ${precoCompra}, ${value}, ${quantidade})
       `;
     } catch (error) {
       console.error('Erro no create:', error);
@@ -54,12 +54,13 @@ export class DatabasePostgres {
 
   async update(id, data) {
     try {
-      const { title, description, value, quantidade = 0 } = data;
+      const { title, description, precoCompra, value, quantidade = 0 } = data;
 
       await sql`
         UPDATE storage
         SET title = ${title},
             description = ${description},
+            preco_compra = ${precoCompra},
             value = ${value},
             quantidade = ${quantidade}
         WHERE id = ${id}

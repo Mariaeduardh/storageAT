@@ -9,6 +9,7 @@ export async function storageRoutes(server) {
     const bodySchema = z.object({
       title: z.string().min(1, 'O título é obrigatório'),
       description: z.string().optional().default(''),
+      precoCompra: z.coerce.number().min(0.01, 'O preço de compra deve ser maior que zero'),
       value: z.coerce.number().min(0.01, 'O valor deve ser maior que zero'),
       quantidade: z.coerce.number().min(0).optional().default(0),
     });
@@ -51,6 +52,7 @@ export async function storageRoutes(server) {
     const bodySchema = z.object({
       title: z.string().min(1, 'O título é obrigatório'),
       description: z.string().optional().default(''),
+      precoCompra: z.coerce.number().min(0.01, 'O preço de compra deve ser maior que zero'),
       value: z.coerce.number().min(0.01, 'O valor deve ser maior que zero'),
       quantidade: z.coerce.number().min(0).optional().default(0),
     });
@@ -95,17 +97,6 @@ export async function storageRoutes(server) {
     }
   });
 
-  // Teste conexão com banco
-  server.get('/ping', async (request, reply) => {
-    try {
-      await database.test();
-      return reply.send({ message: 'Conexão com o banco funcionando!' });
-    } catch (error) {
-      console.error(error);
-      return reply.status(500).send({ error: 'Falha ao conectar com o banco' });
-    }
-  });
-
   // PATCH para decrementar quantidade e deletar se zero
   server.patch('/storage/:id/decrement', async (request, reply) => {
     const paramsSchema = z.object({
@@ -133,6 +124,7 @@ export async function storageRoutes(server) {
         await database.update(id, {
           title: item.title,
           description: item.description || '',
+          precoCompra: Number(item.preco_compra), // Atenção aqui, coluna do DB é preco_compra
           value: Number(item.value),
           quantidade: novaQuantidade,
         });
@@ -141,6 +133,17 @@ export async function storageRoutes(server) {
     } catch (error) {
       console.error(error);
       return reply.status(500).send({ error: 'Erro ao reduzir quantidade' });
+    }
+  });
+
+  // Endpoint teste conexão banco
+  server.get('/ping', async (request, reply) => {
+    try {
+      await database.test();
+      return reply.send({ message: 'Conexão com o banco funcionando!' });
+    } catch (error) {
+      console.error(error);
+      return reply.status(500).send({ error: 'Falha ao conectar com o banco' });
     }
   });
 }

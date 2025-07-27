@@ -6,7 +6,7 @@ const totalProdutosSpan = document.getElementById('totalProdutos');
 const vendidosSpan = document.getElementById('totalVendidos');
 const lucroSpan = document.getElementById('lucroVendas');
 
-let totalVendidos = 0; // Contador local de vendas
+let totalVendidos = 0;
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -14,8 +14,8 @@ form.addEventListener('submit', async (e) => {
   const produto = {
     title: document.getElementById('nome').value.trim(),
     quantidade: Number(document.getElementById('quantidade').value),
-    precoCompra: Number(document.getElementById('precoCompra').value.replace(",", ".")),
-    value: Number(document.getElementById('precoVenda').value.replace(",", "."))
+    precoCompra: Number(document.getElementById('precoCompra').value.replace(',', '.')),
+    value: Number(document.getElementById('precoVenda').value.replace(',', '.')),
   };
 
   if (!produto.title || produto.quantidade <= 0 || produto.precoCompra <= 0 || produto.value <= 0) {
@@ -60,7 +60,7 @@ async function carregarProdutos() {
       const valorVenda = Number(produto.value);
       tdValor.textContent = `R$ ${valorVenda.toFixed(2)}`;
 
-      const precoCompra = Number(produto.precoCompra);
+      const precoCompra = Number(produto.preco_compra || produto.precoCompra || 0);
       const lucroProduto = (valorVenda - precoCompra) * produto.quantidade;
       lucroTotal += lucroProduto;
 
@@ -89,7 +89,6 @@ async function carregarProdutos() {
     totalProdutosSpan.textContent = totalQuantidade;
     lucroSpan.textContent = lucroTotal.toFixed(2);
     vendidosSpan.textContent = totalVendidos;
-
   } catch (err) {
     alert('Erro ao carregar produtos');
     console.error(err);
