@@ -14,7 +14,8 @@ await server.register(cors, {
     'https://storageat.netlify.app', 
     'http://localhost:3333',   
     'http://127.0.0.1:5500',        
-    'http://127.0.0.1:5501'          
+    'http://127.0.0.1:5501'    
+  ]      
 });
 
 const sql = postgres(process.env.DATABASE_URL, {
