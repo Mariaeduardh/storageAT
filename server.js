@@ -15,7 +15,7 @@ await server.register(cors, {
     'http://127.0.0.1:5500',
     'http://127.0.0.1:5501',
   ],
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], 
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   preflight: true,
 });
 

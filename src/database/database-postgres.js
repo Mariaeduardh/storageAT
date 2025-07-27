@@ -16,16 +16,6 @@ export class DatabasePostgres {
     }
   }
 
-  async entries() {
-    try {
-      const result = await sql`SELECT * FROM storage`;
-      return result.map(row => [row.id, row]);
-    } catch (error) {
-      console.error('Erro no entries:', error);
-      throw error;
-    }
-  }
-
   async find(id) {
     try {
       return await sql`
@@ -39,9 +29,7 @@ export class DatabasePostgres {
 
   async create(data) {
     try {
-      const { title, description, preco_compra, value, quantidade = 0 } = data;
-
-      console.log('Produto recebido para inserir no banco:', data);
+      const { title, description, precoCompra, value, quantidade = 0 } = data;
 
       await sql`
         INSERT INTO storage (title, description, preco_compra, value, quantidade)
@@ -56,7 +44,6 @@ export class DatabasePostgres {
   async update(id, data) {
     try {
       const { title, description, precoCompra, value, quantidade = 0 } = data;
-      console.log('Atualizando produto:', id, data);
 
       await sql`
         UPDATE storage
@@ -67,8 +54,6 @@ export class DatabasePostgres {
             quantidade = ${quantidade}
         WHERE id = ${id}
       `;
-
-      console.log('Update realizado com sucesso');
     } catch (error) {
       console.error('Erro no update:', error);
       throw error;
@@ -78,8 +63,7 @@ export class DatabasePostgres {
   async delete(id) {
     try {
       await sql`
-        DELETE FROM storage
-        WHERE id = ${id}
+        DELETE FROM storage WHERE id = ${id}
       `;
     } catch (error) {
       console.error('Erro no delete:', error);

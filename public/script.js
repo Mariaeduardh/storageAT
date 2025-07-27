@@ -14,7 +14,7 @@ form.addEventListener('submit', async (e) => {
   const produto = {
     title: document.getElementById('nome').value.trim(),
     quantidade: Number(document.getElementById('quantidade').value),
-    preco_compra: Number(document.getElementById('precoCompra').value.replace(',', '.')),
+    precoCompra: Number(document.getElementById('precoCompra').value.replace(',', '.')),
     value: Number(document.getElementById('precoVenda').value.replace(',', '.')),
   };
 
@@ -24,11 +24,17 @@ form.addEventListener('submit', async (e) => {
   }
 
   try {
-    await fetch(API_URL, {
+    const res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(produto),
     });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      alert(`Erro ao adicionar produto: ${errorData.error || 'Erro desconhecido'}`);
+      return;
+    }
 
     form.reset();
     carregarProdutos();
@@ -57,11 +63,9 @@ async function carregarProdutos() {
       tdQuantidade.textContent = produto.quantidade;
 
       const tdValor = document.createElement('td');
-      const valorVenda = Number(produto.value);
-      tdValor.textContent = `R$ ${valorVenda.toFixed(2)}`;
+      tdValor.textContent = `R$ ${produto.value.toFixed(2)}`;
 
-      const precoCompra = Number(produto.preco_compra || produto.precoCompra || 0);
-      const lucroProduto = (valorVenda - precoCompra) * produto.quantidade;
+      const lucroProduto = (produto.value - produto.precoCompra) * produto.quantidade;
       lucroTotal += lucroProduto;
 
       const tdLucro = document.createElement('td');
@@ -99,17 +103,13 @@ async function venderProduto(id) {
   try {
     const res = await fetch(`${API_URL}/${id}/decrement`, {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ quantidade: 1 }) // <- ENVIA CORPO COM VALOR
     });
 
     const data = await res.json();
 
     if (res.ok) {
       alert(data.message);
-      totalVendidos += 1;
+      totalVendidos++;
       carregarProdutos();
     } else {
       alert(data.error || 'Erro ao vender o produto');
@@ -119,7 +119,6 @@ async function venderProduto(id) {
     console.error(err);
   }
 }
-
 
 async function excluirProduto(id) {
   if (!confirm('Tem certeza que deseja excluir este produto?')) return;

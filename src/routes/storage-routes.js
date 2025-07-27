@@ -3,6 +3,17 @@ import { DatabasePostgres } from '../database/database-postgres.js';
 
 const database = new DatabasePostgres();
 
+function mapDbToApi(produto) {
+  return {
+    id: produto.id,
+    title: produto.title,
+    description: produto.description,
+    precoCompra: Number(produto.preco_compra),
+    value: Number(produto.value),
+    quantidade: produto.quantidade,
+  };
+}
+
 export async function storageRoutes(server) {
   // Criar item
   server.post('/storage', async (request, reply) => {
@@ -32,17 +43,17 @@ export async function storageRoutes(server) {
 
   // Listar itens com estoque disponível
   server.get('/storage', async (request, reply) => {
-  try {
-    const search = request.query.search;
-    const storage = await database.list(search);
-    const ativos = storage.filter(prod => prod.quantidade > 0);
-    return reply.send(ativos);
-  } catch (error) {
-    console.error('Erro ao listar produtos:', error); // Certifique que isso esteja logando
-    return reply.status(500).send({ error: 'Erro ao listar produtos' });
-  }
+    try {
+      const search = request.query.search;
+      const storage = await database.list(search);
+      const ativos = storage.filter(prod => prod.quantidade > 0);
+      const produtosMapeados = ativos.map(mapDbToApi);
+      return reply.send(produtosMapeados);
+    } catch (error) {
+      console.error('Erro ao listar produtos:', error);
+      return reply.status(500).send({ error: 'Erro ao listar produtos' });
+    }
   });
-
 
   // Atualizar item
   server.put('/storage/:id', async (request, reply) => {
@@ -106,10 +117,8 @@ export async function storageRoutes(server) {
 
     try {
       const { id } = paramsSchema.parse(request.params);
-      console.log('ID para decrementar:', id);
 
       const [item] = await database.find(id);
-      console.log('Item encontrado:', item);
 
       if (!item) {
         return reply.status(404).send({ error: 'Produto não encontrado' });
@@ -120,29 +129,18 @@ export async function storageRoutes(server) {
       }
 
       const novaQuantidade = item.quantidade - 1;
-      console.log('Nova quantidade:', novaQuantidade);
 
       if (novaQuantidade === 0) {
         await database.delete(id);
         return reply.status(200).send({ message: 'Produto removido por falta de estoque' });
       } else {
-        if (!item.title || item.value == null || item.preco_compra == null) {
-          return reply.status(400).send({ error: 'Dados inválidos no produto' });
-        }
-
-        const valorConvertido = Number(item.value);
-        if (isNaN(valorConvertido)) {
-          return reply.status(400).send({ error: 'Valor do produto inválido' });
-        }
-
         const dadosUpdate = {
           title: item.title,
           description: item.description || '',
-          precoCompra: item.preco_compra,
-          value: valorConvertido,
+          precoCompra: Number(item.preco_compra),
+          value: Number(item.value),
           quantidade: novaQuantidade,
         };
-        console.log('Dados para update:', dadosUpdate);
 
         await database.update(id, dadosUpdate);
 
