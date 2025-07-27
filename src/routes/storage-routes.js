@@ -14,38 +14,38 @@ export async function storageRoutes(server) {
 
   // POST - Criar produto
   server.post('/storage', async (request, reply) => {
-    const {
-      title,
-      description = '',
-      preco_compra,  // aqui deve receber o campo com esse nome
-      value,
-      quantidade = 0
-    } = request.body;
+  let {
+    title,
+    description = '',
+    preco_compra,
+    value,
+    quantidade
+  } = request.body;
 
-    // Validação
-    if (
-      !title ||
-      preco_compra === undefined ||
-      value === undefined ||
-      quantidade < 0 ||
-      isNaN(preco_compra) ||
-      isNaN(value) ||
-      isNaN(quantidade)
-    ) {
-      return reply.status(400).send({ error: 'Campos obrigatórios ausentes ou inválidos.' });
-    }
+  preco_compra = Number(preco_compra);
+  value = Number(value);
+  quantidade = Number(quantidade ?? 0);
 
-    try {
-      await sql`
-        INSERT INTO storage (title, description, preco_compra, value, quantidade)
-        VALUES (${title}, ${description}, ${preco_compra}, ${value}, ${quantidade})
-      `;
-      return reply.status(201).send({ message: 'Produto adicionado com sucesso.' });
-    } catch (error) {
-      console.error('Erro ao adicionar produto:', error);
-      return reply.status(500).send({ error: 'Erro interno ao adicionar produto.' });
-    }
-  });
+  if (
+    !title ||
+    isNaN(preco_compra) || preco_compra <= 0 ||
+    isNaN(value) || value <= 0 ||
+    isNaN(quantidade) || quantidade < 0
+  ) {
+    return reply.status(400).send({ error: 'Campos obrigatórios ausentes ou inválidos.' });
+  }
+
+  try {
+    await sql`
+      INSERT INTO storage (title, description, preco_compra, value, quantidade)
+      VALUES (${title}, ${description}, ${preco_compra}, ${value}, ${quantidade})
+    `;
+    return reply.status(201).send({ message: 'Produto adicionado com sucesso.' });
+  } catch (error) {
+    console.error('Erro ao adicionar produto:', error);
+    return reply.status(500).send({ error: 'Erro interno ao adicionar produto.' });
+  }
+});
 
   // PATCH - Vender (decrementar quantidade)
   server.patch('/storage/:id/decrement', async (request, reply) => {
