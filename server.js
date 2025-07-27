@@ -3,7 +3,7 @@ import postgres from 'postgres';
 import dotenv from 'dotenv';
 import cors from '@fastify/cors';
 
-import { setupDatabase } from './setupDatabase.js';  // Ajuste o caminho conforme seu projeto
+import { setupDatabase } from './src/database/setupDatabase.js';
 import { storageRoutes } from './src/routes/storage-routes.js'; // Ajuste caminho também
 
 dotenv.config();

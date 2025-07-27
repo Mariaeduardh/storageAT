@@ -1,4 +1,5 @@
 import { sql } from './bd.js';
+import { setupDatabase } from './src/database/setupDatabase.js';
 
 export async function setupDatabase() {
   try {
