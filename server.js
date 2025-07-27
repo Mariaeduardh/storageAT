@@ -1,43 +1,56 @@
 import fastify from 'fastify';
-import { storageRoutes } from './src/routes/storage-routes.js';
 import postgres from 'postgres';
 import dotenv from 'dotenv';
 import cors from '@fastify/cors';
 
+import { setupDatabase } from './setupDatabase.js';  // Ajuste o caminho conforme seu projeto
+import { storageRoutes } from './src/routes/storage-routes.js'; // Ajuste caminho também
+
 dotenv.config();
 
-const server = fastify();
+async function startServer() {
+  const server = fastify();
 
-// Configuração CORS para permitir front-end
-await server.register(cors, {
-  origin: [
-    'https://storageat.netlify.app',
-    'http://localhost:3333',
-    'http://127.0.0.1:5500',
-    'http://127.0.0.1:5501',
-  ],
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  preflight: true,
-});
+  // Configuração CORS para permitir front-end
+  await server.register(cors, {
+    origin: [
+      'https://storageat.netlify.app',
+      'http://localhost:3333',
+      'http://127.0.0.1:5500',
+      'http://127.0.0.1:5501',
+    ],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    preflight: true,
+  });
 
-// Conexão com o banco PostgreSQL via pacote postgres
-const sql = postgres(process.env.DATABASE_URL, {
-  ssl: { rejectUnauthorized: false }, // importante para Render.com e outros
-});
+  // Conexão com o banco PostgreSQL via pacote postgres
+  const sql = postgres(process.env.DATABASE_URL, {
+    ssl: { rejectUnauthorized: false }, // importante para Render.com e outros
+  });
 
-// Disponibiliza a conexão via decorator para as rotas
-server.decorate('sql', sql);
+  // Executa setup do banco (cria tabela e colunas se necessário)
+  await setupDatabase(sql);
 
-// Registra as rotas do storage (produtos)
-server.register(storageRoutes);
+  // Disponibiliza a conexão via decorator para as rotas
+  server.decorate('sql', sql);
 
-const PORT = Number(process.env.PORT) || Number(process.env.LOCAL_PORT) || 3333;
-const HOST = '0.0.0.0';
+  // Registra as rotas do storage (produtos)
+  server.register(storageRoutes);
 
-server.listen({ port: PORT, host: HOST }, (err, address) => {
-  if (err) {
-    console.error('Erro ao iniciar servidor:', err);
-    process.exit(1);
-  }
-  console.log(`Servidor rodando em ${address}`);
+  const PORT = Number(process.env.PORT) || Number(process.env.LOCAL_PORT) || 3333;
+  const HOST = '0.0.0.0';
+
+  // Inicia servidor
+  server.listen({ port: PORT, host: HOST }, (err, address) => {
+    if (err) {
+      console.error('Erro ao iniciar servidor:', err);
+      process.exit(1);
+    }
+    console.log(`Servidor rodando em ${address}`);
+  });
+}
+
+startServer().catch((error) => {
+  console.error('Erro na inicialização do servidor:', error);
+  process.exit(1);
 });

@@ -22,7 +22,6 @@ export async function storageRoutes(server) {
       quantidade = 0
     } = request.body;
 
-    // Validação básica
     if (
       !title ||
       preco_compra === undefined ||
