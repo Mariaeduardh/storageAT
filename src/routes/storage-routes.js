@@ -14,15 +14,21 @@ export async function storageRoutes(server) {
 
   // POST - Criar produto
   server.post('/storage', async (request, reply) => {
-    const { title, description = '', precoCompra, value, quantidade = 0 } = request.body;
+    const {
+      title,
+      description = '',
+      precoCompra: preco_compra,
+      value,
+      quantidade = 0
+    } = request.body;
 
     // Validação básica
     if (
       !title ||
-      precoCompra === undefined ||
+      preco_compra === undefined ||
       value === undefined ||
       quantidade < 0 ||
-      isNaN(precoCompra) ||
+      isNaN(preco_compra) ||
       isNaN(value) ||
       isNaN(quantidade)
     ) {
@@ -32,7 +38,7 @@ export async function storageRoutes(server) {
     try {
       await sql`
         INSERT INTO storage (title, description, preco_compra, value, quantidade)
-        VALUES (${title}, ${description}, ${precoCompra}, ${value}, ${quantidade})
+        VALUES (${title}, ${description}, ${preco_compra}, ${value}, ${quantidade})
       `;
       return reply.status(201).send({ message: 'Produto adicionado com sucesso.' });
     } catch (error) {
