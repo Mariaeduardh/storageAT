@@ -55,6 +55,7 @@ export class DatabasePostgres {
   async update(id, data) {
     try {
       const { title, description, precoCompra, value, quantidade = 0 } = data;
+      console.log('Atualizando produto:', id, data);
 
       await sql`
         UPDATE storage
@@ -65,6 +66,8 @@ export class DatabasePostgres {
             quantidade = ${quantidade}
         WHERE id = ${id}
       `;
+
+      console.log('Update realizado com sucesso');
     } catch (error) {
       console.error('Erro no update:', error);
       throw error;

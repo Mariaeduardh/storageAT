@@ -25,7 +25,7 @@ export async function storageRoutes(server) {
           issues: error.issues,
         });
       }
-      console.error(error);
+      console.error('Erro ao criar produto:', error);
       return reply.status(500).send({ error: 'Erro interno ao criar produto' });
     }
   });
@@ -38,7 +38,7 @@ export async function storageRoutes(server) {
       const ativos = storage.filter(prod => prod.quantidade > 0);
       return reply.send(ativos);
     } catch (error) {
-      console.error(error);
+      console.error('Erro ao listar produtos:', error);
       return reply.status(500).send({ error: 'Erro ao listar produtos' });
     }
   });
@@ -70,7 +70,7 @@ export async function storageRoutes(server) {
           issues: error.issues,
         });
       }
-      console.error(error);
+      console.error('Erro ao atualizar produto:', error);
       return reply.status(500).send({ error: 'Erro ao atualizar produto' });
     }
   });
@@ -92,57 +92,66 @@ export async function storageRoutes(server) {
           issues: error.issues,
         });
       }
-      console.error(error);
+      console.error('Erro ao deletar produto:', error);
       return reply.status(500).send({ error: 'Erro ao deletar produto' });
     }
   });
 
-// PATCH para decrementar quantidade e deletar se zero
-server.patch('/storage/:id/decrement', async (request, reply) => {
-  const paramsSchema = z.object({
-    id: z.string().min(1, 'ID inválido'),
-  });
+  // PATCH para decrementar quantidade e deletar se zero
+  server.patch('/storage/:id/decrement', async (request, reply) => {
+    const paramsSchema = z.object({
+      id: z.string().min(1, 'ID inválido'),
+    });
 
-  try {
-    const { id } = paramsSchema.parse(request.params);
-    const [item] = await database.find(id);
+    try {
+      const { id } = paramsSchema.parse(request.params);
+      console.log('ID para decrementar:', id);
 
-    if (!item) {
-      return reply.status(404).send({ error: 'Produto não encontrado' });
-    }
+      const [item] = await database.find(id);
+      console.log('Item encontrado:', item);
 
-    if (item.quantidade <= 0) {
-      return reply.status(400).send({ error: 'Produto sem estoque' });
-    }
-
-    const novaQuantidade = item.quantidade - 1;
-
-    if (novaQuantidade === 0) {
-      await database.delete(id);
-      return reply.status(200).send({ message: 'Produto removido por falta de estoque' });
-    } else {
-      // Verifica e garante que o valor seja um número válido
-      const valorConvertido = Number(item.value);
-      if (isNaN(valorConvertido)) {
-        return reply.status(400).send({ error: 'Valor do produto inválido' });
+      if (!item) {
+        return reply.status(404).send({ error: 'Produto não encontrado' });
       }
 
-      await database.update(id, {
-      title: item.title,
-      description: item.description || '',
-      precoCompra: item.precoCompra, // <-- esse campo estava faltando
-      value: valorConvertido,
-      quantidade: novaQuantidade,
-      });
+      if (item.quantidade <= 0) {
+        return reply.status(400).send({ error: 'Produto sem estoque' });
+      }
 
+      const novaQuantidade = item.quantidade - 1;
+      console.log('Nova quantidade:', novaQuantidade);
 
-      return reply.status(200).send({ message: 'Quantidade reduzida com sucesso' });
+      if (novaQuantidade === 0) {
+        await database.delete(id);
+        return reply.status(200).send({ message: 'Produto removido por falta de estoque' });
+      } else {
+        if (!item.title || item.value == null || item.preco_compra == null) {
+          return reply.status(400).send({ error: 'Dados inválidos no produto' });
+        }
+
+        const valorConvertido = Number(item.value);
+        if (isNaN(valorConvertido)) {
+          return reply.status(400).send({ error: 'Valor do produto inválido' });
+        }
+
+        const dadosUpdate = {
+          title: item.title,
+          description: item.description || '',
+          precoCompra: item.preco_compra,
+          value: valorConvertido,
+          quantidade: novaQuantidade,
+        };
+        console.log('Dados para update:', dadosUpdate);
+
+        await database.update(id, dadosUpdate);
+
+        return reply.status(200).send({ message: 'Quantidade reduzida com sucesso' });
+      }
+    } catch (error) {
+      console.error('Erro ao reduzir quantidade:', error);
+      return reply.status(500).send({ error: 'Erro ao reduzir quantidade' });
     }
-  } catch (error) {
-    console.error('Erro ao reduzir quantidade:', error);
-    return reply.status(500).send({ error: 'Erro ao reduzir quantidade' });
-  }
-});
+  });
 
   // Endpoint teste conexão banco
   server.get('/ping', async (request, reply) => {
@@ -150,7 +159,7 @@ server.patch('/storage/:id/decrement', async (request, reply) => {
       await database.test();
       return reply.send({ message: 'Conexão com o banco funcionando!' });
     } catch (error) {
-      console.error(error);
+      console.error('Falha ao conectar com o banco:', error);
       return reply.status(500).send({ error: 'Falha ao conectar com o banco' });
     }
   });
