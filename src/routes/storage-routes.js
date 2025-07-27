@@ -8,7 +8,7 @@ export async function storageRoutes(server) {
   server.post('/storage', async (request, reply) => {
     const bodySchema = z.object({
       title: z.string().min(1, 'O título é obrigatório'),
-      description: z.string().optional(),
+      description: z.string().optional().default(''),
       value: z.coerce.number().min(0.01, 'O valor deve ser maior que zero'),
       quantidade: z.coerce.number().min(0).optional().default(0),
     });
@@ -24,6 +24,7 @@ export async function storageRoutes(server) {
           issues: error.issues,
         });
       }
+      console.error(error);
       return reply.status(500).send({ error: 'Erro interno ao criar produto' });
     }
   });
@@ -33,12 +34,10 @@ export async function storageRoutes(server) {
     try {
       const search = request.query.search;
       const storage = await database.list(search);
-
-      // Mostrar apenas produtos com estoque > 0
       const ativos = storage.filter(prod => prod.quantidade > 0);
-
       return reply.send(ativos);
     } catch (error) {
+      console.error(error);
       return reply.status(500).send({ error: 'Erro ao listar produtos' });
     }
   });
@@ -51,7 +50,7 @@ export async function storageRoutes(server) {
 
     const bodySchema = z.object({
       title: z.string().min(1, 'O título é obrigatório'),
-      description: z.string().optional(),
+      description: z.string().optional().default(''),
       value: z.coerce.number().min(0.01, 'O valor deve ser maior que zero'),
       quantidade: z.coerce.number().min(0).optional().default(0),
     });
@@ -69,6 +68,7 @@ export async function storageRoutes(server) {
           issues: error.issues,
         });
       }
+      console.error(error);
       return reply.status(500).send({ error: 'Erro ao atualizar produto' });
     }
   });
@@ -90,21 +90,23 @@ export async function storageRoutes(server) {
           issues: error.issues,
         });
       }
+      console.error(error);
       return reply.status(500).send({ error: 'Erro ao deletar produto' });
     }
   });
 
-  // Endpoint para testar conexão com banco
+  // Teste conexão com banco
   server.get('/ping', async (request, reply) => {
     try {
       await database.test();
       return reply.send({ message: 'Conexão com o banco funcionando!' });
     } catch (error) {
+      console.error(error);
       return reply.status(500).send({ error: 'Falha ao conectar com o banco' });
     }
   });
 
-  // Rota PATCH para reduzir quantidade e deletar se chegar a zero
+  // PATCH para decrementar quantidade e deletar se zero
   server.patch('/storage/:id/decrement', async (request, reply) => {
     const paramsSchema = z.object({
       id: z.string().min(1, 'ID inválido'),
@@ -112,8 +114,7 @@ export async function storageRoutes(server) {
 
     try {
       const { id } = paramsSchema.parse(request.params);
-
-      const [item] = await database.find(id); // método find que retorna array
+      const [item] = await database.find(id);
 
       if (!item) {
         return reply.status(404).send({ error: 'Produto não encontrado' });
@@ -131,8 +132,8 @@ export async function storageRoutes(server) {
       } else {
         await database.update(id, {
           title: item.title,
-          description: item.description,
-          value: item.value,
+          description: item.description || '',
+          value: Number(item.value),
           quantidade: novaQuantidade,
         });
         return reply.status(200).send({ message: 'Quantidade reduzida com sucesso' });

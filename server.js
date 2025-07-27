@@ -8,34 +8,37 @@ dotenv.config();
 
 const server = fastify();
 
-// ✅ Habilita CORS para Netlify, localhost e Live Server
+// Habilita CORS para Netlify, localhost e Live Server com todos os métodos usados (GET, POST, PUT, PATCH, DELETE, OPTIONS)
 await server.register(cors, {
   origin: [
-    'https://storageat.netlify.app', 
-    'http://localhost:3333',   
-    'http://127.0.0.1:5500',        
-    'http://127.0.0.1:5501'    
-  ]      
+    'https://storageat.netlify.app',
+    'http://localhost:3333',
+    'http://127.0.0.1:5500',
+    'http://127.0.0.1:5501',
+  ],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],  // ESSENCIAL PARA EVITAR ERROS CORS NO PATCH E DELETE
+  preflight: true,  // Garante que as requisições OPTIONS são respondidas corretamente
 });
 
 const sql = postgres(process.env.DATABASE_URL, {
   ssl: {
     rejectUnauthorized: false,
-  }
+  },
 });
 
+// Disponibiliza o cliente SQL para rotas
 server.decorate('sql', sql);
 
-// Registra as rotas
+// Registra as rotas do storage
 server.register(storageRoutes);
 
-// Inicia o servidor
+// Inicializa o servidor
 const PORT = Number(process.env.PORT) || Number(process.env.LOCAL_PORT) || 3333;
 const HOST = '0.0.0.0';
 
 server.listen({ port: PORT, host: HOST }, (err, address) => {
   if (err) {
-    console.error(err);
+    console.error('Erro ao iniciar servidor:', err);
     process.exit(1);
   }
   console.log(`Servidor rodando em ${address}`);
